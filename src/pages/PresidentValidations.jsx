@@ -28,10 +28,10 @@ const StatBadge = ({ label, value, color }) => {
   );
 };
 
-const PresidentValidations = () => {
+const PresidentValidations = ({ defaultTab = "membres" }) => {
   const { t } = useI18n();
   const [searchParams] = useSearchParams();
-  const [tab, setTab] = useState(searchParams.get("tab") === "entretiens" ? "entretiens" : "membres");
+  const [tab, setTab] = useState(searchParams.get("tab") || defaultTab);
   const [pending, setPending] = useState([]);
   const [entretiens, setEntretiens] = useState([]);
   const [loading, setLoading] = useState(true);

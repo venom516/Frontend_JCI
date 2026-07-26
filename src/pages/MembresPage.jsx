@@ -114,6 +114,37 @@ export default function MembresPage() {
     setShowEditModal(true);
   };
 
+  const handleAddRole = async () => {
+    const name = prompt(t('admin.nouveau_role'));
+    if (!name || name.trim().length < 2) return;
+    try {
+      await membreAPI.createRole(name.trim());
+      toast.success(t('admin.succes_role_cree', { name: name.trim() }));
+      fetchRoles();
+    } catch (e) { toast.error(e.response?.data?.message || t('admin.erreur_creation_role')); }
+  };
+
+  const handleRenameRole = async (oldName) => {
+    const newName = prompt(t('admin.nouveau_nom_pour', { name: oldName }), oldName);
+    if (!newName || newName.trim() === oldName) return;
+    try {
+      await membreAPI.renameRole(oldName, newName.trim());
+      toast.success(t('admin.succes_role_renomme', { oldName, newName: newName.trim() }));
+      fetchRoles();
+      fetchMembres();
+    } catch (e) { toast.error(e.response?.data?.message || t('admin.erreur_renommage')); }
+  };
+
+  const handleDeleteRole = async (roleName) => {
+    if (!window.confirm(t('admin.confirmer_supprimer_role', { roleName }))) return;
+    try {
+      const res = await membreAPI.deleteRole(roleName);
+      toast.success(res.data?.message || t('admin.succes_role_supprime', { roleName }));
+      fetchRoles();
+      fetchMembres();
+    } catch (e) { toast.error(e.response?.data?.message || t('admin.erreur_suppression_role')); }
+  };
+
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -275,6 +306,39 @@ export default function MembresPage() {
             );
           })}
         </div>
+      )}
+
+      {/* Gestion des rôles */}
+      {isPresident && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>{t("admin.gestion_roles")}</CardTitle>
+                <p className="text-sm text-muted-foreground">{t("admin.gestion_roles_sous_titre")}</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleAddRole} className="flex items-center gap-2">
+                <Plus className="w-4 h-4" /> {t("admin.nouveau_role")}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              {roles.filter(r => r.name !== 'Admin').map(r => (
+                <div key={r.name} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-accent ring-1 ring-border hover:ring-primary-200 transition-all">
+                  <span className="font-medium text-sm">{r.name}</span>
+                  <span className="text-xs text-muted-foreground">({r.count})</span>
+                  <button onClick={() => handleRenameRole(r.name)} className="text-primary-600 hover:text-primary-800 ml-1 transition-colors" title={t("common.renommer")}>
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => handleDeleteRole(r.name)} className="text-destructive hover:text-destructive/80 transition-colors" title={t("common.supprimer")}>
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Modal d�tails */}

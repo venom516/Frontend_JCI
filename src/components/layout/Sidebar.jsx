@@ -21,6 +21,7 @@ const Sidebar = () => {
   const sidebarRef = useRef(null);
   const [calendarOpen, setCalendarOpen] = useState(true);
   const [tasksOpen, setTasksOpen] = useState(true);
+  const [validationsOpen, setValidationsOpen] = useState(true);
 
   const publicLinks = [
     { title: t("nav.accueil"), href: "/", icon: Home },
@@ -57,7 +58,6 @@ const Sidebar = () => {
   ];
 
   const presidentItems = [
-    { title: t("nav.validations_entretiens"), href: "/president/validations", icon: CheckSquare, roles: ["President"] },
     { title: t("nav.contacts"), href: "/president/contacts", icon: Phone, roles: ["President"] },
     { title: t("nav.config"), href: "/president/config", icon: Globe, roles: ["President"] },
   ];
@@ -258,6 +258,22 @@ const Sidebar = () => {
                       <div className="ml-4 space-y-1">
                         <SidebarItem item={{ title: t("nav.taches_normale"), href: "/tasks/normale", icon: ListTodo }} onClick={close} />
                         <SidebarItem item={{ title: t("nav.taches_media"), href: "/tasks/media", icon: ListTodo }} onClick={close} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <button
+                      onClick={() => setValidationsOpen(!validationsOpen)}
+                      className="flex items-center gap-3 w-full text-sm font-medium rounded-lg px-3 py-2.5 text-surface-700 hover:bg-surface-100 hover:text-surface-900 transition-all duration-200"
+                    >
+                      <CheckSquare className="w-4 h-4 flex-shrink-0" />
+                      <span className="flex-1 text-left">{t("nav.validations_entretiens")}</span>
+                      {validationsOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                    </button>
+                    {validationsOpen && (
+                      <div className="ml-4 space-y-1">
+                        <SidebarItem item={{ title: t("nav.validations"), href: "/president/validations", icon: CheckSquare }} onClick={close} />
+                        <SidebarItem item={{ title: t("nav.entretiens"), href: "/president/entretiens", icon: CheckSquare }} onClick={close} />
                       </div>
                     )}
                   </div>

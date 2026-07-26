@@ -101,7 +101,8 @@ function AppRoutes() {
       <Route path="/admin" element={<ProtectedRoute roles={["President"]}><Navigate to="/president/validations" replace /></ProtectedRoute>} />
       <Route path="/calendar/general" element={<ProtectedRoute roles={["President"]}><ProtectedLayout><GeneralCalendarPage /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/calendar/president/media" element={<ProtectedRoute roles={["President"]}><ProtectedLayout><PresidentMediaCalendarPage /></ProtectedLayout></ProtectedRoute>} />
-      <Route path="/president/validations" element={<ProtectedRoute roles={["President"]}><ProtectedLayout><PresidentValidations /></ProtectedLayout></ProtectedRoute>} />
+      <Route path="/president/validations" element={<ProtectedRoute roles={["President"]}><ProtectedLayout><PresidentValidations defaultTab="membres" /></ProtectedLayout></ProtectedRoute>} />
+      <Route path="/president/entretiens" element={<ProtectedRoute roles={["President"]}><ProtectedLayout><PresidentValidations defaultTab="entretiens" /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/president/contacts" element={<ProtectedRoute roles={["President"]}><ProtectedLayout><PresidentContacts /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/president/config" element={<ProtectedRoute roles={["President"]}><ProtectedLayout><PresidentSiteConfig /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/dashboard/membre" element={<ProtectedRoute roles={["Membre", "PP", "Past President", "PPI", "Sénateur"]}><ProtectedLayout><MembreDashboard /></ProtectedLayout></ProtectedRoute>} />

@@ -13,7 +13,7 @@ const navItems = [
   { labelKey: "nav.documents", path: "/documents", icon: "file-text" },
   { labelKey: "nav.actualites", path: "/news", icon: "newspaper" },
   { labelKey: "nav.publications", path: "/publications", icon: "share" },
-  { labelKey: "nav.entretiens", path: "/entretiens", icon: "mic" },
+  { labelKey: "nav.entretiens", path: "/president/entretiens", icon: "mic" },
   { labelKey: "nav.contacts", path: "/president/contacts", icon: "mail" },
   { labelKey: "nav.config", path: "/president/config", icon: "settings" },
   { labelKey: "nav.profil", path: "/profile", icon: "user" },
