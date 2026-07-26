@@ -1,0 +1,26 @@
+const jciConfig = {
+  nom: "JCI Sidi Mansour",
+  sigle: "JCI",
+  slogan: "One Team, One Impact",
+  adresse: "Sidi Mansour, Sfax",
+  email: "jcesidimansour@gmail.com",
+  telephone: "+216 58 662 000",
+  telephone_display: "58 662 000",
+  telephone_lien: "tel:58662000",
+  site_web: "www.jcitunisia.com",
+  site_web_url: "http://www.jcitunisia.com",
+  facebook: "https://www.facebook.com/JCI.Sidi.Mansour?locale=fr_FR",
+  facebook_nom: "JCI Sidi Mansour",
+  instagram: "https://www.instagram.com/jci_sidi_mansour/",
+  instagram_nom: "@jci_sidi_mansour",
+  maps: "https://www.google.com/maps?q=Sidi+Mansour,Sfax,Tunisie&output=embed",
+  maps_q: "Sidi Mansour, Sfax",
+  email_contact: "jcesidimansour@gmail.com",
+  email_contact_lien: "mailto:jcesidimansour@gmail.com",
+  linkedin: "https://www.linkedin.com/company/jci-sidi-mansour/",
+  linkedin_nom: "JCI Sidi Mansour",
+  youtube: "https://www.youtube.com/@JCISidiMansour",
+  youtube_nom: "JCI Sidi Mansour",
+};
+
+export default jciConfig;
