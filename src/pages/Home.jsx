@@ -256,7 +256,7 @@ const Home = () => {
                 }}
               >
                 <div className="relative z-10 pt-6 md:pt-10 pb-2 md:pb-4">
-                  <div className="animate-fade-in-up w-full max-w-5xl mx-auto text-center flex flex-col space-y-[5vh] px-4 md:mt-[150px]" style={{ marginTop: 200 }}>
+                  <div className="animate-fade-in-up w-full max-w-5xl mx-auto text-center flex flex-col space-y-[5vh] px-4 md:mt-[150px]" style={{ marginTop: 100 }}>
                     {!logoError ? (
                       <center>
                         <img
