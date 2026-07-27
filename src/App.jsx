@@ -90,7 +90,7 @@ function AppRoutes() {
       <Route path="/tasks" element={<ProtectedRoute excludeRoles={["Membre"]}><ProtectedLayout><TasksPage /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/tasks/normale" element={<ProtectedRoute excludeRoles={["Membre"]}><ProtectedLayout><TasksPage /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/tasks/media" element={<ProtectedRoute roles={["President", "ConseillerMedia", "VPFD"]}><ProtectedLayout><TasksPage /></ProtectedLayout></ProtectedRoute>} />
-      <Route path="/events" element={<ProtectedRoute excludeRoles={["Membre"]}><ProtectedLayout><EventsPage /></ProtectedLayout></ProtectedRoute>} />
+      <Route path="/events" element={<ProtectedRoute roles={["President", "VPFD", "VPPRE"]}><ProtectedLayout><EventsPage /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/tasks-events" element={<ProtectedRoute roles={["Membre"]}><ProtectedLayout><TasksEventsPage /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/news" element={<ProtectedRoute roles={["ConseillerMedia", "President"]}><ProtectedLayout><NewsManagementPage /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/news/create" element={<ProtectedRoute roles={["ConseillerMedia", "President"]}><ProtectedLayout><NewsManagementPage /></ProtectedLayout></ProtectedRoute>} />
