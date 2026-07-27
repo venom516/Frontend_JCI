@@ -311,7 +311,7 @@ const Sidebar = () => {
                   <SidebarItem item={{ title: t("nav.taches_evenements"), href: "/tasks-events", icon: CalendarDays }} onClick={close} />
                 </>
               )}
-              {!["President", "SecretaireGeneral", "ConseillerMedia", "Membre"].includes(user?.role) && (
+              {!["President", "SecretaireGeneral", "ConseillerMedia", "Membre", "VPFD", "VPPRE"].includes(user?.role) && (
                 <>
                   {navItems.map((item) => (
                     <SidebarItem key={item.href} item={item} onClick={close} />
