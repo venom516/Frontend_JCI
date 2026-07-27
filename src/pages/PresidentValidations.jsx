@@ -48,6 +48,7 @@ const PresidentValidations = ({ defaultTab = "membres" }) => {
   const [formStatus, setFormStatus] = useState("demandé");
   const [membres, setMembres] = useState([]);
   const [formLoading, setFormLoading] = useState(false);
+  const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
     if (tab === "membres") fetchPending();
@@ -87,6 +88,7 @@ const PresidentValidations = ({ defaultTab = "membres" }) => {
   };
 
   const handleAccepter = async (id) => {
+    setProcessing(true);
     try {
       await membreAPI.validerInscription(id);
       toast.success(t('validations.acceptee'));
@@ -94,10 +96,11 @@ const PresidentValidations = ({ defaultTab = "membres" }) => {
       fetchPending();
     } catch (e) {
       toast.error(e.response?.data?.message || t('common.erreur'));
-    }
+    } finally { setProcessing(false); }
   };
 
   const handleRejeter = async (id) => {
+    setProcessing(true);
     try {
       await membreAPI.rejectMember(id);
       toast.success(t('validations.refusee'));
@@ -105,18 +108,19 @@ const PresidentValidations = ({ defaultTab = "membres" }) => {
       fetchPending();
     } catch (e) {
       toast.error(e.response?.data?.message || t('common.erreur'));
-    }
+    } finally { setProcessing(false); }
   };
 
   const handleSupprimer = async (m) => {
     if (!window.confirm(t('validations.confirmer_suppression', { prenom: m.prenom, nom: m.nom }))) return;
+    setProcessing(true);
     try {
       await membreAPI.delete(m._id);
       toast.success(t('common.supprime'));
       fetchPending();
     } catch (e) {
       toast.error(e.response?.data?.message || t('common.erreur'));
-    }
+    } finally { setProcessing(false); }
   };
 
   const openAddForm = () => {
@@ -165,16 +169,18 @@ const PresidentValidations = ({ defaultTab = "membres" }) => {
 
   const handleDeleteEntretien = async (id) => {
     if (!window.confirm(t('president.confirmer_suppression_entretien'))) return;
+    setProcessing(true);
     try {
       await entretienAPI.delete(id);
       toast.success(t('president.entretien_supprime'));
       fetchEntretiens();
     } catch (e) {
       toast.error(e.response?.data?.message || t('common.erreur'));
-    }
+    } finally { setProcessing(false); }
   };
 
   const handleApprove = async (id) => {
+    setProcessing(true);
     try {
       await entretienAPI.approve(id);
       toast.success(t('entretiens.approuve'));
@@ -182,10 +188,11 @@ const PresidentValidations = ({ defaultTab = "membres" }) => {
       fetchPending();
     } catch (e) {
       toast.error(e.response?.data?.message || t('common.erreur'));
-    }
+    } finally { setProcessing(false); }
   };
 
   const handleReject = async (id) => {
+    setProcessing(true);
     try {
       await entretienAPI.reject(id);
       toast.success(t('entretiens.rejete'));
@@ -193,20 +200,21 @@ const PresidentValidations = ({ defaultTab = "membres" }) => {
       fetchPending();
     } catch (e) {
       toast.error(e.response?.data?.message || t('common.erreur'));
-    }
+    } finally { setProcessing(false); }
   };
 
   const handleRealise = async (id) => {
     const note = prompt(t('entretiens.note_prompt'));
     if (note === null) return;
     const remarques = prompt(t('entretiens.remarques_prompt'));
+    setProcessing(true);
     try {
       await entretienAPI.realise(id, { note: parseFloat(note) || 0, remarques: remarques || "" });
       toast.success(t('entretiens.marque_realise'));
       fetchEntretiens();
     } catch (e) {
       toast.error(t('common.erreur'));
-    }
+    } finally { setProcessing(false); }
   };
 
   if (loading) return <Skeleton className="h-96 w-full" />;
@@ -287,10 +295,10 @@ const PresidentValidations = ({ defaultTab = "membres" }) => {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Button size="sm" onClick={() => setSelected(selected === m._id ? null : m._id)}>
+                        <Button size="sm" onClick={() => setSelected(selected === m._id ? null : m._id)} disabled={processing}>
                           <Pencil className="w-3.5 h-3.5 mr-1" /> {t('common.modifier')}
                         </Button>
-                        <Button size="sm" variant="destructive" onClick={() => handleSupprimer(m)}>
+                        <Button size="sm" variant="destructive" onClick={() => handleSupprimer(m)} disabled={processing}>
                           <UserX className="w-3.5 h-3.5 mr-1" /> {t('common.supprimer')}
                         </Button>
                       </div>
@@ -299,11 +307,11 @@ const PresidentValidations = ({ defaultTab = "membres" }) => {
                       <div className="mt-4 pt-4 border-t border-surface-200">
                         <p className="text-sm text-surface-600 mb-3">{t('validations.choisir_action')}</p>
                         <div className="flex gap-3">
-                          <Button className="bg-emerald-600 text-white hover:bg-emerald-700" onClick={() => handleAccepter(m._id)}>
-                            <CheckCircle className="w-4 h-4 mr-1.5" /> {t('validations.accepter')}
+                          <Button className="bg-emerald-600 text-white hover:bg-emerald-700" onClick={() => handleAccepter(m._id)} disabled={processing}>
+                            {processing ? t('common.chargement') : <><CheckCircle className="w-4 h-4 mr-1.5" /> {t('validations.accepter')}</>}
                           </Button>
-                          <Button variant="destructive" onClick={() => handleRejeter(m._id)}>
-                            <XCircle className="w-4 h-4 mr-1.5" /> {t('validations.refuser')}
+                          <Button variant="destructive" onClick={() => handleRejeter(m._id)} disabled={processing}>
+                            {processing ? t('common.chargement') : <><XCircle className="w-4 h-4 mr-1.5" /> {t('validations.refuser')}</>}
                           </Button>
                           <Button variant="outline" onClick={() => setSelected(null)}>{t('common.annuler')}</Button>
                         </div>
@@ -464,24 +472,24 @@ const PresidentValidations = ({ defaultTab = "membres" }) => {
                       <div className="flex flex-wrap gap-2 shrink-0">
                         {e.status === "demandé" || e.status === "en-attente" ? (
                           <>
-                            <Button size="sm" className="bg-emerald-600 text-white hover:bg-emerald-700" onClick={() => handleApprove(e._id)}>
-                              <CheckCircle className="w-3.5 h-3.5 mr-1" /> {t('entretiens.confirmer')}
+                            <Button size="sm" className="bg-emerald-600 text-white hover:bg-emerald-700" onClick={() => handleApprove(e._id)} disabled={processing}>
+                              {processing ? t('common.chargement') : <><CheckCircle className="w-3.5 h-3.5 mr-1" /> {t('entretiens.confirmer')}</>}
                             </Button>
-                            <Button size="sm" variant="destructive" onClick={() => handleReject(e._id)}>
-                              <XCircle className="w-3.5 h-3.5 mr-1" /> {t('entretiens.rejeter')}
+                            <Button size="sm" variant="destructive" onClick={() => handleReject(e._id)} disabled={processing}>
+                              {processing ? t('common.chargement') : <><XCircle className="w-3.5 h-3.5 mr-1" /> {t('entretiens.rejeter')}</>}
                             </Button>
                           </>
                         ) : e.status === "approuvé" ? (
-                          <Button size="sm" variant="outline" onClick={() => handleRealise(e._id)}>
-                            {t('entretiens.marquer_realise')}
+                          <Button size="sm" variant="outline" onClick={() => handleRealise(e._id)} disabled={processing}>
+                            {processing ? t('common.chargement') : t('entretiens.marquer_realise')}
                           </Button>
                         ) : null}
                         {e.status !== "approuvé" && e.status !== "réalisé" && (
                           <>
-                            <Button size="sm" variant="outline" onClick={() => openEditForm(e)}>
+                            <Button size="sm" variant="outline" onClick={() => openEditForm(e)} disabled={processing}>
                               <Pencil className="w-3.5 h-3.5" />
                             </Button>
-                            <Button size="sm" variant="destructive" onClick={() => handleDeleteEntretien(e._id)}>
+                            <Button size="sm" variant="destructive" onClick={() => handleDeleteEntretien(e._id)} disabled={processing}>
                               <Trash2 className="w-3.5 h-3.5" />
                             </Button>
                           </>

@@ -7,6 +7,8 @@ const DEFAULT_LANG = "fr";
 const translations = {
   fr: {
     "nav.dashboard": "Tableau de bord",
+    "nav.dashboard_vpfd": "Tableau de bord VPFD",
+    "nav.dashboard_vppre": "Tableau de bord VPPRE",
     "nav.profil": "Profil",
     "nav.calendrier": "Calendrier",
     "nav.calendrier_media": "Calendrier média",
@@ -1121,6 +1123,8 @@ const translations = {
   },
   ar: {
     "nav.dashboard": "لوحة القيادة",
+    "nav.dashboard_vpfd": "لوحة قيادة VPFD",
+    "nav.dashboard_vppre": "لوحة قيادة VPPRE",
     "nav.profil": "الملف الشخصي",
     "nav.calendrier": "التقويم",
     "nav.calendrier_media": "تقويم الإعلام",
@@ -2235,6 +2239,8 @@ const translations = {
   },
   en: {
     "nav.dashboard": "Dashboard",
+    "nav.dashboard_vpfd": "VPFD Dashboard",
+    "nav.dashboard_vppre": "VPPRE Dashboard",
     "nav.profil": "Profile",
     "nav.calendrier": "Calendar",
     "nav.calendrier_media": "Media calendar",
