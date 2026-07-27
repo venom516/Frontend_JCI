@@ -227,7 +227,7 @@ const Sidebar = () => {
                   <SidebarItem item={{ title: t("nav.profil"), href: "/profile", icon: UserCircle }} onClick={close} />
                   <SidebarItem item={{ title: t("nav.calendrier_media"), href: "/calendar/media", icon: Calendar }} onClick={close} />
                   <SidebarItem item={{ title: t("nav.entretiens"), href: "/vpfd/entretiens", icon: CheckSquare }} onClick={close} />
-                  <SidebarItem item={{ title: t("nav.evenements"), href: "/events", icon: Calendar }} onClick={close} />
+                  <SidebarItem item={{ title: t("nav.taches_evenements"), href: "/tasks-events", icon: CalendarDays }} onClick={close} />
                   <SidebarItem item={{ title: t("nav.taches_media"), href: "/tasks/media", icon: ListTodo }} onClick={close} />
                 </>
               )}
@@ -235,7 +235,7 @@ const Sidebar = () => {
                 <>
                   <SidebarItem item={{ title: t("nav.dashboard_vppre"), href: "/dashboard/vppre", icon: LayoutDashboard }} onClick={close} />
                   <SidebarItem item={{ title: t("nav.profil"), href: "/profile", icon: UserCircle }} onClick={close} />
-                  <SidebarItem item={{ title: t("nav.evenements"), href: "/events", icon: Calendar }} onClick={close} />
+                  <SidebarItem item={{ title: t("nav.taches_evenements"), href: "/tasks-events", icon: CalendarDays }} onClick={close} />
                   <SidebarItem item={{ title: t("nav.taches_normale"), href: "/tasks/normale", icon: ListTodo }} onClick={close} />
                   <SidebarItem item={{ title: t("calendar.general_title"), href: "/calendar/general", icon: Calendar }} onClick={close} />
                 </>
@@ -308,7 +308,7 @@ const Sidebar = () => {
                 <>
                   <SidebarItem item={{ title: t("nav.dashboard"), href: "/dashboard", icon: LayoutDashboard }} onClick={close} />
                   <SidebarItem item={{ title: t("nav.profil"), href: "/profile", icon: UserCircle }} onClick={close} />
-                  <SidebarItem item={{ title: t("nav.taches_evenements"), href: "/tasks-events", icon: CalendarDays }} onClick={close} />
+                  <SidebarItem item={{ title: t("nav.evenements"), href: "/events", icon: Calendar }} onClick={close} />
                 </>
               )}
               {!["President", "SecretaireGeneral", "ConseillerMedia", "Membre", "VPFD", "VPPRE"].includes(user?.role) && (

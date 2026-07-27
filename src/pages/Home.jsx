@@ -178,6 +178,11 @@ const Home = () => {
             <h3 className="text-lg font-semibold text-foreground mb-2 line-clamp-2 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors duration-300">
               {title}
             </h3>
+            {image && (
+              <div className="mb-4 rounded-xl overflow-hidden">
+                <img src={image} alt={title} className="w-full h-48 object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+              </div>
+            )}
             <div className="bg-muted/30 rounded-xl p-4 mb-4 border border-border">
               <p className="text-muted-foreground text-sm leading-relaxed line-clamp-4">
                 {content.length > 200 ? content.substring(0, 200) + "..." : content}
