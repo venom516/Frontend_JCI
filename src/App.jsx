@@ -89,19 +89,19 @@ function AppRoutes() {
       <Route path="/members" element={<ProtectedRoute roles={["Admin", "President", "SecretaireGeneral", "ConseillerMedia"]}><ProtectedLayout><MembresPage /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/tasks" element={<ProtectedRoute excludeRoles={["Membre"]}><ProtectedLayout><TasksPage /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/tasks/normale" element={<ProtectedRoute excludeRoles={["Membre"]}><ProtectedLayout><TasksPage /></ProtectedLayout></ProtectedRoute>} />
-      <Route path="/tasks/media" element={<ProtectedRoute roles={["President", "ConseillerMedia"]}><ProtectedLayout><TasksPage /></ProtectedLayout></ProtectedRoute>} />
+      <Route path="/tasks/media" element={<ProtectedRoute roles={["President", "ConseillerMedia", "VPFD"]}><ProtectedLayout><TasksPage /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/events" element={<ProtectedRoute excludeRoles={["Membre"]}><ProtectedLayout><EventsPage /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/tasks-events" element={<ProtectedRoute roles={["Membre"]}><ProtectedLayout><TasksEventsPage /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/news" element={<ProtectedRoute roles={["ConseillerMedia", "President"]}><ProtectedLayout><NewsManagementPage /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/news/create" element={<ProtectedRoute roles={["ConseillerMedia", "President"]}><ProtectedLayout><NewsManagementPage /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/news/edit/:id" element={<ProtectedRoute roles={["ConseillerMedia", "President"]}><ProtectedLayout><NewsManagementPage /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/publications" element={<ProtectedRoute roles={["ConseillerMedia", "President"]}><ProtectedLayout><PublicationsPage /></ProtectedLayout></ProtectedRoute>} />
-      <Route path="/calendar/media" element={<ProtectedRoute roles={["ConseillerMedia", "President"]}><ProtectedLayout><MediaCalendarPage /></ProtectedLayout></ProtectedRoute>} />
+      <Route path="/calendar/media" element={<ProtectedRoute roles={["ConseillerMedia", "President", "VPFD"]}><ProtectedLayout><MediaCalendarPage /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/calendar/president" element={<ProtectedRoute roles={["President"]}><ProtectedLayout><PresidentCalendarPage /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/documents" element={<ProtectedRoute roles={["SecretaireGeneral", "President"]}><ProtectedLayout><DocumentsPage /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/dashboard/admin" element={<ProtectedRoute roles={["Admin", "President"]}><ProtectedLayout><AdminDashboard /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute roles={["President"]}><Navigate to="/president/validations" replace /></ProtectedRoute>} />
-      <Route path="/calendar/general" element={<ProtectedRoute roles={["President"]}><ProtectedLayout><GeneralCalendarPage /></ProtectedLayout></ProtectedRoute>} />
+      <Route path="/calendar/general" element={<ProtectedRoute roles={["President", "VPPRE"]}><ProtectedLayout><GeneralCalendarPage /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/calendar/president/media" element={<ProtectedRoute roles={["President"]}><ProtectedLayout><PresidentMediaCalendarPage /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/president/validations" element={<ProtectedRoute roles={["President"]}><ProtectedLayout><PresidentValidations defaultTab="membres" /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/president/entretiens" element={<ProtectedRoute roles={["President"]}><ProtectedLayout><PresidentValidations defaultTab="entretiens" /></ProtectedLayout></ProtectedRoute>} />
