@@ -10,7 +10,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "../components/ui/select";
 import { Skeleton } from "../components/ui/skeleton";
-import { CheckCircle, Calendar, Clock, MapPin, Trash2, Pencil, CheckSquare, XCircle, Plus } from "lucide-react";
+import { CheckCircle, Calendar, Clock, MapPin, Trash2, Pencil, CheckSquare, XCircle, Plus, UserX } from "lucide-react";
 
 const StatBadge = ({ label, value, color }) => {
   const colors = {
@@ -36,9 +36,6 @@ const PresidentValidations = ({ defaultTab = "membres" }) => {
   const [entretiens, setEntretiens] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
-  const [dateEntretien, setDateEntretien] = useState("");
-  const [lieuEntretien, setLieuEntretien] = useState("");
-  const [commentaire, setCommentaire] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState(null);
   const [filterStatus, setFilterStatus] = useState("");
@@ -89,17 +86,34 @@ const PresidentValidations = ({ defaultTab = "membres" }) => {
     finally { setLoading(false); }
   };
 
-  const handleProgrammer = async (id) => {
-    if (!dateEntretien) { toast.error(t('validations.choisir_date')); return; }
+  const handleAccepter = async (id) => {
     try {
-      await membreAPI.acceptMember(id, { dateEntretien, commentaire, lieu: lieuEntretien });
-      toast.success(t('president.email_entretien_envoye'));
+      await membreAPI.validerInscription(id);
+      toast.success(t('validations.acceptee'));
       setSelected(null);
-      setDateEntretien("");
-      setLieuEntretien("");
-      setCommentaire("");
       fetchPending();
-      fetchEntretiens();
+    } catch (e) {
+      toast.error(e.response?.data?.message || t('common.erreur'));
+    }
+  };
+
+  const handleRejeter = async (id) => {
+    try {
+      await membreAPI.rejectMember(id);
+      toast.success(t('validations.refusee'));
+      setSelected(null);
+      fetchPending();
+    } catch (e) {
+      toast.error(e.response?.data?.message || t('common.erreur'));
+    }
+  };
+
+  const handleSupprimer = async (m) => {
+    if (!window.confirm(t('validations.confirmer_suppression', { prenom: m.prenom, nom: m.nom }))) return;
+    try {
+      await membreAPI.delete(m._id);
+      toast.success(t('common.supprime'));
+      fetchPending();
     } catch (e) {
       toast.error(e.response?.data?.message || t('common.erreur'));
     }
@@ -237,22 +251,12 @@ const PresidentValidations = ({ defaultTab = "membres" }) => {
                 <CheckSquare className="w-6 h-6" />
               </div>
               <div>
-                <CardTitle className="text-2xl font-bold text-surface-900">{t('nav.validations_entretiens')}</CardTitle>
-                <p className="text-surface-500">{pending.length} {t('president.inscriptions_attente')}</p>
+                <CardTitle className="text-2xl font-bold text-surface-900">
+                  {tab === "membres" ? "Validation" : t('president.entretiens_titre')}
+                </CardTitle>
               </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="flex gap-2 border-b border-surface-200">
-              {[{ key: "membres", label: t('president.validations_titre'), count: pending.length }, { key: "entretiens", label: t('president.entretiens_titre'), count: entretiens.length }].map((tb) => (
-                <Button key={tb.key} onClick={() => setTab(tb.key)}
-                  variant={tab === tb.key ? "default" : "ghost"}
-                  className={"border-b-2 -mb-px rounded-none " + (tab === tb.key ? "text-primary-600 border-primary-600" : "text-surface-500 border-transparent hover:text-surface-700")}>
-                  {tb.label} ({tb.count})
-                </Button>
-              ))}
-            </div>
-          </CardContent>
         </Card>
 
         {tab === "membres" && (
@@ -264,7 +268,7 @@ const PresidentValidations = ({ defaultTab = "membres" }) => {
               </Card>
             ) : (
               <div className="space-y-4">
-                {pending.map((m) => (
+                  {pending.map((m) => (
                   <Card key={m._id} className="p-5">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div>
@@ -282,29 +286,26 @@ const PresidentValidations = ({ defaultTab = "membres" }) => {
                           <span>{t('validations.situation')}: {m.situationProfessionnelle || t('common.non_renseigne')}</span>
                         </div>
                       </div>
-                      <Button size="sm" onClick={() => setSelected(selected === m._id ? null : m._id)}>
-                        {selected === m._id ? t('common.fermer') : t('president.programmer')}
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => setSelected(selected === m._id ? null : m._id)}>
+                          <Pencil className="w-3.5 h-3.5 mr-1" /> {t('common.modifier')}
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleSupprimer(m)}>
+                          <UserX className="w-3.5 h-3.5 mr-1" /> {t('common.supprimer')}
+                        </Button>
+                      </div>
                     </div>
                     {selected === m._id && (
                       <div className="mt-4 pt-4 border-t border-surface-200">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div>
-                            <Label>{t('president.date_entretien')} *</Label>
-                            <Input type="datetime-local" value={dateEntretien} onChange={(e) => setDateEntretien(e.target.value)} required />
-                          </div>
-                          <div>
-                            <Label>{t('entretiens.lieu')}</Label>
-                            <Input type="text" placeholder={t('entretiens.lieu_placeholder')} value={lieuEntretien} onChange={(e) => setLieuEntretien(e.target.value)} />
-                          </div>
-                          <div>
-                            <Label>{t('president.commentaire')}</Label>
-                            <Input type="text" placeholder={t('president.commentaire_placeholder')} value={commentaire} onChange={(e) => setCommentaire(e.target.value)} />
-                          </div>
-                        </div>
-                        <div className="flex gap-2 mt-4">
-                          <Button onClick={() => handleProgrammer(m._id)}>{t('common.enregistrer')}</Button>
-                          <Button variant="outline" onClick={() => { setSelected(null); setDateEntretien(""); setLieuEntretien(""); setCommentaire(""); }}>{t('common.annuler')}</Button>
+                        <p className="text-sm text-surface-600 mb-3">{t('validations.choisir_action')}</p>
+                        <div className="flex gap-3">
+                          <Button className="bg-emerald-600 text-white hover:bg-emerald-700" onClick={() => handleAccepter(m._id)}>
+                            <CheckCircle className="w-4 h-4 mr-1.5" /> {t('validations.accepter')}
+                          </Button>
+                          <Button variant="destructive" onClick={() => handleRejeter(m._id)}>
+                            <XCircle className="w-4 h-4 mr-1.5" /> {t('validations.refuser')}
+                          </Button>
+                          <Button variant="outline" onClick={() => setSelected(null)}>{t('common.annuler')}</Button>
                         </div>
                       </div>
                     )}
@@ -357,6 +358,11 @@ const PresidentValidations = ({ defaultTab = "membres" }) => {
                         ))}
                       </SelectContent>
                     </Select>
+                    {formMembre && !editId && (
+                      <div className="text-xs text-surface-500 mt-1">
+                        {(() => { const m = membres.find(m => m._id === formMembre); return m ? `${m.email}${m.telephone ? ` | ${m.telephone}` : ""}` : ""; })()}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <Label>{t('president.date_entretien')} *</Label>
@@ -421,6 +427,14 @@ const PresidentValidations = ({ defaultTab = "membres" }) => {
                           <span className="flex items-center gap-1.5">
                             <Clock className="w-3.5 h-3.5 shrink-0 text-surface-400" />
                             {formatTimeDisplay(e.date)}
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <span className="text-surface-400">✉</span>
+                            {e.membre?.email || "—"}
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <span className="text-surface-400">📞</span>
+                            {e.membre?.telephone || "—"}
                           </span>
                           {e.lieu && (
                             <span className="flex items-center gap-1.5">

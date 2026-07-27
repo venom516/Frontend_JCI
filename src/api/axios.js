@@ -115,6 +115,7 @@ export const membreAPI = {
   deleteRole: (role) => axiosInstance.delete(`/membres/roles/${role}`),
   acceptMember: (id, data) => axiosInstance.put(`/membres/${id}/accept`, data),
   rejectMember: (id) => axiosInstance.put(`/membres/${id}/reject`),
+  validerInscription: (id) => axiosInstance.put(`/membres/${id}/valider`),
 };
 
 // ============================================================

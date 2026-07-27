@@ -172,11 +172,11 @@ export default function MembresPage() {
 
   const getRoleLabel = (r) => ({
     President: t("members.role_president"), SecretaireGeneral: t("members.role_sg"),
-    ConseillerMedia: t("members.role_media"), Admin: t("members.role_admin"),
+    ConseillerMedia: t("members.role_media"),
     "Conseiller Juridique": t("members.role_conseiller"),
     "Sénateur": t("members.role_senateur"), "Past President": t("members.role_past_president"), PPI: t("members.role_ppi"),
     VPPRE: t("members.role_vppre"), VPFD: t("members.role_vpfd"),
-    PP: t("members.role_pp"), Tresorie: t("members.role_tresorie"),
+    Tresorie: t("members.role_tresorie"),
     Membre: t("members.role_membre")
   })[r] || r;
 
@@ -324,7 +324,7 @@ export default function MembresPage() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-3">
-              {roles.filter(r => r.name !== 'Admin').map(r => (
+              {roles.map(r => (
                 <div key={r.name} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-accent ring-1 ring-border hover:ring-primary-200 transition-all">
                   <span className="font-medium text-sm">{r.name}</span>
                   <span className="text-xs text-muted-foreground">({r.count})</span>
@@ -412,7 +412,7 @@ export default function MembresPage() {
                   <div className="space-y-1">
                     <Label>{t("members.role")}</Label>
                     <select value={editForm.role} onChange={(e) => setEditForm(p => ({ ...p, role: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                      {(roles.length > 0 ? roles : [{name:"Membre"},{name:"Admin"},{name:"President"},{name:"SecretaireGeneral"},{name:"ConseillerMedia"}]).map(r => (
+                      {(roles.length > 0 ? roles : [{name:"Membre"},{name:"President"},{name:"SecretaireGeneral"},{name:"ConseillerMedia"}]).map(r => (
                         <option key={r.name || r} value={r.name || r}>{getRoleLabel(r.name || r)}</option>
                       ))}
                     </select>
