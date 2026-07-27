@@ -44,6 +44,8 @@ import PresidentSiteConfig from "./pages/PresidentSiteConfig";
 import PresidentLink from "./pages/PresidentLink";
 import MemberLink from "./pages/MemberLink";
 import TasksEventsPage from "./pages/TasksEventsPage";
+import DashboardVPFD from "./pages/DashboardVPFD";
+import DashboardVPPRE from "./pages/DashboardVPPRE";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -109,6 +111,9 @@ function AppRoutes() {
       <Route path="/dashboard/past-president" element={<ProtectedRoute roles={["PP", "Past President"]}><ProtectedLayout><MembreDashboard /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/dashboard/senateur" element={<ProtectedRoute roles={["Sénateur"]}><ProtectedLayout><MembreDashboard /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/dashboard/ppi" element={<ProtectedRoute roles={["PPI"]}><ProtectedLayout><MembreDashboard /></ProtectedLayout></ProtectedRoute>} />
+      <Route path="/dashboard/vpfd" element={<ProtectedRoute roles={["VPFD", "President"]}><ProtectedLayout><DashboardVPFD /></ProtectedLayout></ProtectedRoute>} />
+      <Route path="/dashboard/vppre" element={<ProtectedRoute roles={["VPPRE", "President"]}><ProtectedLayout><DashboardVPPRE /></ProtectedLayout></ProtectedRoute>} />
+      <Route path="/vpfd/entretiens" element={<ProtectedRoute roles={["VPFD", "President"]}><ProtectedLayout><PresidentValidations defaultTab="entretiens" /></ProtectedLayout></ProtectedRoute>} />
     </Routes>
   );
 }

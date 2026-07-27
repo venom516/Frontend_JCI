@@ -252,6 +252,9 @@ export const siteConfigAPI = {
 export const formationAPI = {
   getCount: () => axiosInstance.get("/formations/count"),
   getAll: () => axiosInstance.get("/formations"),
+  create: (data) => axiosInstance.post("/formations", data),
+  update: (id, data) => axiosInstance.put(`/formations/${id}`, data),
+  delete: (id) => axiosInstance.delete(`/formations/${id}`),
 };
 
 export const calendarAPI = {

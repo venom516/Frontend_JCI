@@ -221,6 +221,20 @@ const Sidebar = () => {
                   <SidebarItem item={{ title: t("nav.calendrier_media"), href: "/calendar/media", icon: Calendar }} onClick={close} />
                 </>
               )}
+              {user?.role === "VPFD" && (
+                <>
+                  <SidebarItem item={{ title: t("nav.dashboard"), href: "/dashboard/vpfd", icon: LayoutDashboard }} onClick={close} />
+                  <SidebarItem item={{ title: t("nav.profil"), href: "/profile", icon: UserCircle }} onClick={close} />
+                  <SidebarItem item={{ title: t("nav.calendrier_media"), href: "/calendar/media", icon: Calendar }} onClick={close} />
+                  <SidebarItem item={{ title: t("nav.entretiens"), href: "/vpfd/entretiens", icon: CheckSquare }} onClick={close} />
+                </>
+              )}
+              {user?.role === "VPPRE" && (
+                <>
+                  <SidebarItem item={{ title: t("nav.dashboard"), href: "/dashboard/vppre", icon: LayoutDashboard }} onClick={close} />
+                  <SidebarItem item={{ title: t("nav.profil"), href: "/profile", icon: UserCircle }} onClick={close} />
+                </>
+              )}
               {user?.role === "President" && (
                 <>
                   {navItems.map((item) => (
