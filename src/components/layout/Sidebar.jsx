@@ -225,7 +225,9 @@ const Sidebar = () => {
                 <>
                   <SidebarItem item={{ title: t("nav.dashboard_vpfd"), href: "/dashboard/vpfd", icon: LayoutDashboard }} onClick={close} />
                   <SidebarItem item={{ title: t("nav.profil"), href: "/profile", icon: UserCircle }} onClick={close} />
-                  <SidebarItem item={{ title: t("nav.calendrier_media"), href: "/calendar/media", icon: Calendar }} onClick={close} />
+                  <SidebarItem item={{ title: t("nav.membres"), href: "/members", icon: Users }} onClick={close} />
+                  <SidebarItem item={{ title: t("nav.calendrier_membre"), href: "/calendar/member", icon: Calendar }} onClick={close} />
+                  <SidebarItem item={{ title: t("nav.validations"), href: "/vpfd/validations", icon: CheckSquare }} onClick={close} />
                   <SidebarItem item={{ title: t("nav.entretiens"), href: "/vpfd/entretiens", icon: CheckSquare }} onClick={close} />
                   <SidebarItem item={{ title: t("nav.taches_evenements"), href: "/tasks-events", icon: CalendarDays }} onClick={close} />
                   <SidebarItem item={{ title: t("nav.taches_media"), href: "/tasks/media", icon: ListTodo }} onClick={close} />
@@ -308,7 +310,7 @@ const Sidebar = () => {
                 <>
                   <SidebarItem item={{ title: t("nav.dashboard"), href: "/dashboard", icon: LayoutDashboard }} onClick={close} />
                   <SidebarItem item={{ title: t("nav.profil"), href: "/profile", icon: UserCircle }} onClick={close} />
-                  <SidebarItem item={{ title: t("nav.evenements"), href: "/events", icon: Calendar }} onClick={close} />
+                  <SidebarItem item={{ title: t("nav.calendrier"), href: "/calendar/member", icon: Calendar }} onClick={close} />
                 </>
               )}
               {!["President", "SecretaireGeneral", "ConseillerMedia", "Membre", "VPFD", "VPPRE"].includes(user?.role) && (

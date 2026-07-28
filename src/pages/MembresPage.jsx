@@ -46,9 +46,13 @@ export default function MembresPage() {
     finally { setLoading(false); }
   };
 
+  const isVPFDorSG = user?.role === "VPFD" || user?.role === "SecretaireGeneral" || isPresident;
+  const canViewStats = isPresident || user?.role === "SecretaireGeneral";
+
   const fetchStats = async () => {
+    if (!canViewStats) return;
     try { const r = await membreAPI.getStats(); setStats(r.data.data || {}); }
-    catch (e) { console.error(e); }
+    catch (e) { console.error("Erreur stats:", e); }
   };
 
   const fetchRoles = async () => {
@@ -284,7 +288,7 @@ export default function MembresPage() {
                           </Badge>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground truncate mt-0.5">{m.email} &middot; ID: {m._id?.slice(-6)} &middot; {formatDate(m.createdAt)}</p>
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">{m.email} {m.telephone ? <>&middot; {m.telephone}</> : ""} &middot; {m.role}</p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleView(m)} title={t("common.voir")}><Eye className="h-4 w-4" /></Button>
