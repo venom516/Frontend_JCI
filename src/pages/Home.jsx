@@ -261,13 +261,13 @@ const Home = () => {
                 }}
               >
                 <div className="relative z-10 pt-6 md:pt-10 pb-2 md:pb-4">
-                  <div className="animate-fade-in-up w-full max-w-5xl mx-auto text-center flex flex-col space-y-[5vh] px-4 md:mt-[150px]" style={{ marginTop: 100 }}>
+                  <div className="animate-fade-in-up w-full max-w-5xl mx-auto text-center flex flex-col space-y-[5vh] px-4 mt-[200px] sm:mt-[200px] lg:mt-[150px] md:mt-[150px]">
                     {!logoError ? (
                       <center>
                         <img
                           src="/images/logo-jci-white.png"
                           alt="JCI"
-                          className="h-30 sm:h-30 md:h-[26rem] lg:h-[30.8rem] lg:w-[30.8rem] mb-[-110px] sm:mb-[-130px] md:mb-[-130px] lg:mb-[-150px]"
+                          className="h-30 sm:h-30 md:h-[26rem] lg:h-[25.8rem] lg:w-[25.8rem] mb-[-100px] sm:mb-[-100px] md:mb-[-130px] lg:mb-[-130px]"
                           loading="lazy"
                           onError={() => setLogoError(true)}
                         />
@@ -281,14 +281,6 @@ const Home = () => {
                     <p className="text-2xl md:text-4xl font-normal text-blue-200 drop-shadow-2xl">
                       {siteConfig.slogan || t('home.hero_sous_titre')}
                     </p>
-                    <div className="mt-16 mb-12">
-                      <Button asChild size="lg" className="text-lg px-10 py-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105 transition-all duration-300">
-                        <Link to="/register" className="inline-flex items-center gap-2">
-                          {t('home.rejoignez_nous')}
-                          <ArrowRight className="w-5 h-5" />
-                        </Link>
-                      </Button>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -299,6 +291,14 @@ const Home = () => {
         </div>
       </section>
       <section className="relative bg-gradient-to-b from-blue-900/100 via-blue-800/70 to-white/80 backdrop-blur pb-12 md:pb-16">
+        <div className="w-[100vw] top-0 left-0 right-0 z-0 align-center items-center justify-center flex flex-col">
+          <Button asChild size="lg" className="text-lg px-10 py-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105 transition-all duration-300">
+            <Link to="/register" className="inline-flex items-center gap-2">
+              {t('home.rejoignez_nous')}
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+          </Button>
+        </div>
         <div className="h-[5vh] md:h-[6vh]" />
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
