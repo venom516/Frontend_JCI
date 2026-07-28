@@ -29,7 +29,7 @@ const NewsDetailPage = () => {
   const fetchNews = async () => {
     setLoading(true);
     try {
-      const response = await newsAPI.getById(id);
+      const response = await newsAPI.getPublicById(id);
       const data = response.data.data || response.data;
       setNews(data);
       setComments(data.comments || []);

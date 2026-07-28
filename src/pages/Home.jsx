@@ -281,8 +281,8 @@ const Home = () => {
                     <p className="text-2xl md:text-4xl font-normal text-blue-200 drop-shadow-2xl">
                       {siteConfig.slogan || t('home.hero_sous_titre')}
                     </p>
-                    <div className="mt-8">
-                      <Button asChild size="lg" className="text-lg px-10 py-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-300">
+                    <div className="mt-12 mb-8">
+                      <Button asChild size="lg" className="text-lg px-10 py-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-300 animate-pulse hover:animate-none">
                         <Link to="/register" className="inline-flex items-center gap-2">
                           {t('home.rejoignez_nous')}
                           <ArrowRight className="w-5 h-5" />

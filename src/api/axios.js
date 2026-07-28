@@ -141,6 +141,7 @@ export const taskAPI = {
 export const newsAPI = {
   getAll: (params) => axiosInstance.get("/news", { params }),
   getPublic: (params) => axiosInstance.get("/news/public", { params }),
+  getPublicById: (id) => axiosInstance.get(`/news/public/${id}`),
   getById: (id) => axiosInstance.get(`/news/${id}`),
   create: (data) => axiosInstance.post("/news", data),
   update: (id, data) => axiosInstance.put(`/news/${id}`, data),
