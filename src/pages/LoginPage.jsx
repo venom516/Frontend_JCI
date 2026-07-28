@@ -39,7 +39,24 @@ export default function LoginPage() {
       };
       toast.success(roleMessages[role] || '✅ ' + t("common.succes") + ' !');
       const redirect = searchParams.get("redirect");
-      navigate(redirect && redirect.startsWith("/") ? redirect : "/dashboard");
+      if (redirect && redirect.startsWith("/")) {
+        navigate(redirect);
+      } else {
+        const dashboardMap = {
+          President: '/president/validations',
+          VPFD: '/dashboard/vpfd',
+          VPPRE: '/dashboard/vppre',
+          Membre: '/dashboard/membre',
+          SecretaireGeneral: '/dashboard',
+          ConseillerMedia: '/tasks/media',
+          PP: '/dashboard/past-president',
+          'Past President': '/dashboard/past-president',
+          PPI: '/dashboard/ppi',
+          Sénateur: '/dashboard/senateur',
+          Admin: '/dashboard/admin',
+        };
+        navigate(dashboardMap[role] || '/dashboard');
+      }
     } else {
       const errMsg = translateError(result.message);
       setError(errMsg);

@@ -63,20 +63,38 @@ function ProtectedLayout({ children }) {
 }
 
 function AppRoutes() {
-  const { loading, isAuthenticated } = useAuth();
+  const { loading, isAuthenticated, user } = useAuth();
   if (loading) return <LoadingScreen text="Chargement de l'application..." />;
+
+  const getDashboard = () => {
+    if (!user) return '/dashboard';
+    const map = {
+      President: '/president/validations',
+      VPFD: '/dashboard/vpfd',
+      VPPRE: '/dashboard/vppre',
+      Membre: '/dashboard/membre',
+      SecretaireGeneral: '/dashboard',
+      ConseillerMedia: '/tasks/media',
+      PP: '/dashboard/past-president',
+      'Past President': '/dashboard/past-president',
+      PPI: '/dashboard/ppi',
+      Sénateur: '/dashboard/senateur',
+      Admin: '/dashboard/admin',
+    };
+    return map[user.role] || '/dashboard';
+  };
 
   return (
     <Routes>
       {/* Publiques (accessibles sans auth) */}
-      <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <PublicLayout><Home /></PublicLayout>} />
+      <Route path="/" element={isAuthenticated ? <Navigate to={getDashboard()} replace /> : <PublicLayout><Home /></PublicLayout>} />
       <Route path="/home" element={<Navigate to="/" replace />} />
-      <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <PublicLayout><LoginPage /></PublicLayout>} />
-      <Route path="/register" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <PublicLayout><RegisterPage /></PublicLayout>} />
-      <Route path="/forgot-password" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <PublicLayout><ForgotPassword /></PublicLayout>} />
+      <Route path="/login" element={isAuthenticated ? <Navigate to={getDashboard()} replace /> : <PublicLayout><LoginPage /></PublicLayout>} />
+      <Route path="/register" element={isAuthenticated ? <Navigate to={getDashboard()} replace /> : <PublicLayout><RegisterPage /></PublicLayout>} />
+      <Route path="/forgot-password" element={isAuthenticated ? <Navigate to={getDashboard()} replace /> : <PublicLayout><ForgotPassword /></PublicLayout>} />
       <Route path="/verify-email" element={<PublicLayout><VerificationPage /></PublicLayout>} />
-      <Route path="/about" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <PublicLayout><AboutPage /></PublicLayout>} />
-      <Route path="/contact" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <PublicLayout><ContactPage /></PublicLayout>} />
+      <Route path="/about" element={isAuthenticated ? <Navigate to={getDashboard()} replace /> : <PublicLayout><AboutPage /></PublicLayout>} />
+      <Route path="/contact" element={isAuthenticated ? <Navigate to={getDashboard()} replace /> : <PublicLayout><ContactPage /></PublicLayout>} />
       <Route path="/formations" element={<ProtectedRoute><PublicLayout><FormationsPage /></PublicLayout></ProtectedRoute>} />
       <Route path="/actualites" element={<PublicLayout><ActualitesPage /></PublicLayout>} />
       <Route path="/news/:id" element={<PublicLayout><NewsDetailPage /></PublicLayout>} />
