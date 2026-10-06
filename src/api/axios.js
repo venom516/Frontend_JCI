@@ -38,6 +38,46 @@ axiosInstance.interceptors.request.use(
 // ============================================================
 // INTERCEPTEUR - Gérer les erreurs + timeout adaptatif
 // ============================================================
+
+// Un compte banni/suspende/archive renvoie 403, pas 401 : sans ces messages la
+// session reste "vivante" cote front alors que le backend refuse tout (§2.9).
+const MESSAGES_SESSION_TERMINEE = [
+  "Votre compte a été banni",
+  "Votre compte est suspendu",
+  "Votre compte a été archivé",
+];
+
+// Comparaison par prefixe : une liste de chemins exacts oublie /news/:id et
+// /actualites/:id, qui sont publiques et ne doivent pas purger la session.
+const ROUTES_PUBLIQUES = [
+  "/",
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+  "/verify-email",
+  "/about",
+  "/contact",
+  "/formations",
+  "/actualites",
+  "/news",
+  "/membres/inscription",
+];
+
+const estPagePublique = (pathname) =>
+  ROUTES_PUBLIQUES.some(
+    (route) =>
+      route === "/"
+        ? pathname === "/"
+        : pathname === route || pathname.startsWith(route + "/")
+  );
+
+const terminerSession = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  window.dispatchEvent(new CustomEvent("auth:unauthorized"));
+};
+
 axiosInstance.interceptors.response.use(
   (response) => {
     const elapsed = Date.now() - (response.config._startTime || 0);
@@ -51,6 +91,7 @@ axiosInstance.interceptors.response.use(
       currentTimeout = Math.min(60000, currentTimeout + 10000);
     }
 
+    const status = error.response?.status;
     const rawMsg = error.response?.data?.message || error.message;
     const detail = error.response?.data?.error;
     error.translatedMessage = translateErrorMessage(rawMsg);
@@ -60,13 +101,12 @@ axiosInstance.interceptors.response.use(
       error.translatedMessage = networkMsg;
     }
 
-    if (error.response?.status === 401) {
-      const publicPages = ["/", "/home", "/about", "/contact", "/login", "/register", "/forgot-password", "/verify-email", "/formations", "/actualites"];
-      if (!publicPages.includes(window.location.pathname)) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        window.dispatchEvent(new CustomEvent("auth:unauthorized"));
-      }
+    const sessionTerminee =
+      status === 401 || (status === 403 && MESSAGES_SESSION_TERMINEE.includes(rawMsg));
+
+    // 403 ordinaire = refus de permission : on garde la session.
+    if (sessionTerminee && !estPagePublique(window.location.pathname)) {
+      terminerSession();
     }
     return Promise.reject(error);
   }
