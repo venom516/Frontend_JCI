@@ -48,14 +48,14 @@ const EntretiensPage = () => {
       const data = all.data.data || [];
       setStats({
         total: data.length,
-        demandes: data.filter(e => e.status === "demande").length,
+        demandes: data.filter(e => e.status === "demandé").length,
         enAttente: data.filter(e => e.status === "en-attente").length,
-        approuves: data.filter(e => e.status === "approuve").length,
-        realises: data.filter(e => e.status === "realise").length,
-        annules: data.filter(e => e.status === "annule").length,
+        approuves: data.filter(e => e.status === "approuvé").length,
+        realises: data.filter(e => e.status === "réalisé").length,
+        annules: data.filter(e => e.status === "annulé").length,
       });
     } catch (error) {
-      toast.error(t('entretiens.erreur_chargement'));
+      toast.error(error.response?.data?.message || error.translatedMessage || t('entretiens.erreur_chargement'));
     } finally {
       setLoading(false);
     }
@@ -104,7 +104,7 @@ const EntretiensPage = () => {
       toast.success(t('entretiens.supprime'));
       fetchData();
     } catch (error) {
-      toast.error(t('common.erreur'));
+      toast.error(error.response?.data?.message || error.translatedMessage || t('common.erreur'));
     }
   };
 
@@ -114,7 +114,7 @@ const EntretiensPage = () => {
       toast.success(t('entretiens.approuve'));
       fetchData();
     } catch (error) {
-      toast.error(t('common.erreur'));
+      toast.error(error.response?.data?.message || error.translatedMessage || t('common.erreur'));
     }
   };
 
@@ -124,7 +124,7 @@ const EntretiensPage = () => {
       toast.success(t('entretiens.rejete'));
       fetchData();
     } catch (error) {
-      toast.error(t('common.erreur'));
+      toast.error(error.response?.data?.message || error.translatedMessage || t('common.erreur'));
     }
   };
 
@@ -140,17 +140,17 @@ const EntretiensPage = () => {
       toast.success(t('entretiens.marque_realise'));
       fetchData();
     } catch (error) {
-      toast.error(t('common.erreur'));
+      toast.error(error.response?.data?.message || error.translatedMessage || t('common.erreur'));
     }
   };
 
   const getStatusBadgeClass = (status) => {
     const classes = {
-      demande: "bg-blue-100 text-blue-800 hover:bg-blue-100",
-      "en-attente": "bg-amber-100 text-amber-800 hover:bg-amber-100",
-      approuve: "bg-emerald-100 text-emerald-800 hover:bg-emerald-100",
-      realise: "bg-blue-100 text-blue-800 hover:bg-blue-100",
-      annule: "bg-red-100 text-red-800 hover:bg-red-100",
+      "demandé": "bg-blue-100 text-blue-800 hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-200",
+      "en-attente": "bg-amber-100 text-amber-800 hover:bg-amber-100 dark:bg-amber-950 dark:text-amber-200",
+      "approuvé": "bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-200",
+      "réalisé": "bg-blue-100 text-blue-800 hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-200",
+      "annulé": "bg-red-100 text-red-800 hover:bg-red-100 dark:bg-red-950 dark:text-red-200",
     };
     return classes[status] || "";
   };
@@ -193,11 +193,11 @@ const EntretiensPage = () => {
         {isPresident && (
           <Card className="p-4 mb-8 flex flex-wrap gap-2 animate-in fade-in duration-300">
             <Button size="sm" variant={filter === "" ? "default" : "ghost"} onClick={() => setFilter("")}>{t('common.tous')}</Button>
-            <Button size="sm" variant={filter === "demande" ? "default" : "ghost"} onClick={() => setFilter("demande")}>{t('entretiens.demandes')}</Button>
+            <Button size="sm" variant={filter === "demandé" ? "default" : "ghost"} onClick={() => setFilter("demandé")}>{t('entretiens.demandes')}</Button>
             <Button size="sm" variant={filter === "en-attente" ? "default" : "ghost"} onClick={() => setFilter("en-attente")}>{t('entretiens.en_attente')}</Button>
-            <Button size="sm" variant={filter === "approuve" ? "default" : "ghost"} onClick={() => setFilter("approuve")}>{t('entretiens.confirme')}</Button>
-            <Button size="sm" variant={filter === "realise" ? "default" : "ghost"} onClick={() => setFilter("realise")}>{t('entretiens.realises')}</Button>
-            <Button size="sm" variant={filter === "annule" ? "default" : "ghost"} onClick={() => setFilter("annule")}>{t('entretiens.annule')}</Button>
+            <Button size="sm" variant={filter === "approuvé" ? "default" : "ghost"} onClick={() => setFilter("approuvé")}>{t('entretiens.confirme')}</Button>
+            <Button size="sm" variant={filter === "réalisé" ? "default" : "ghost"} onClick={() => setFilter("réalisé")}>{t('entretiens.realises')}</Button>
+            <Button size="sm" variant={filter === "annulé" ? "default" : "ghost"} onClick={() => setFilter("annulé")}>{t('entretiens.annule')}</Button>
           </Card>
         )}
 
@@ -290,12 +290,12 @@ const EntretiensPage = () => {
                   <div className="flex flex-wrap gap-2">
                     {isPresident && (
                       <>
-                        {item.status === "demande" || item.status === "en-attente" ? (
+                        {item.status === "demandé" || item.status === "en-attente" ? (
                           <>
                             <Button size="sm" className="bg-emerald-600 text-white hover:bg-emerald-700" onClick={() => handleApprove(item._id)}>{t('entretiens.confirmer')}</Button>
                             <Button size="sm" variant="destructive" onClick={() => handleReject(item._id)}>{t('entretiens.rejeter')}</Button>
                           </>
-                        ) : item.status === "approuve" ? (
+                        ) : item.status === "approuvé" ? (
                           <Button size="sm" variant="outline" onClick={() => handleRealise(item._id)}>{t('entretiens.marquer_realise')}</Button>
                         ) : null}
                         <Button size="sm" variant="outline" onClick={() => handleEdit(item)}>
@@ -306,7 +306,7 @@ const EntretiensPage = () => {
                         </Button>
                       </>
                     )}
-                    {!isPresident && item.membre?._id === user?._id && item.status === "demande" && (
+                    {!isPresident && item.membre?._id === user?._id && item.status === "demandé" && (
                       <Button size="sm" variant="destructive" onClick={() => handleDelete(item._id)}>{t('entretiens.annule')}</Button>
                     )}
                   </div>

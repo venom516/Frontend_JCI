@@ -15,13 +15,13 @@ import {
 import toast from "react-hot-toast";
 
 const statusColors = {
-  "créée": "bg-slate-100 text-slate-700",
-  "assignée": "bg-blue-100 text-blue-700",
-  "en-cours": "bg-amber-100 text-amber-700",
-  "en-révision": "bg-purple-100 text-purple-700",
-  "terminée": "bg-emerald-100 text-emerald-700",
-  "annulée": "bg-red-100 text-red-700",
-};
+"créée": "bg-slate-100 text-slate-700 dark:bg-slate-950 dark:text-slate-200",
+    "assignée": "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-200",
+    "en-cours": "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-200",
+    "en-révision": "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-200",
+    "terminée": "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-200",
+    "annulée": "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-200",
+    };
 
 const CalendarMember = () => {
   const { user } = useAuth();
@@ -52,7 +52,7 @@ const CalendarMember = () => {
       setTasks(tasksRes.data.data || []);
       setEvents(eventsRes.data.data || []);
     } catch (error) {
-      toast.error(t("events.erreur_chargement"));
+      toast.error(error.response?.data?.message || error.translatedMessage || t("events.erreur_chargement"));
     } finally {
       setLoading(false);
     }

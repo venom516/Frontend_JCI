@@ -7,6 +7,7 @@ import { Skeleton } from "../components/ui/skeleton";
 import { Badge } from "../components/ui/badge";
 import { Handshake, Globe, Target, Users, Calendar, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 
 const DashboardVPPRE = () => {
   const { t } = useI18n();
@@ -28,7 +29,7 @@ const DashboardVPPRE = () => {
       setEvents(eventsRes.data.data || []);
       setEventCount(eventsRes.data.data?.length || 0);
       setTasks(tasksRes.data.data || []);
-    } catch {}
+    } catch (error) { toast.error(error.response?.data?.message || error.translatedMessage || t('common.erreur')); }
     finally { setLoading(false); }
   };
 

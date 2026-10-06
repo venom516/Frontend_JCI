@@ -51,6 +51,7 @@ export default function DashboardPage() {
         const res = await dashboardAPI.getMe();
         setData(res.data.data);
       } catch (err) {
+        toast.error(err.response?.data?.message || err.translatedMessage || t("common.erreur"));
         console.error("Erreur chargement dashboard:", err);
       } finally {
         setLoading(false);

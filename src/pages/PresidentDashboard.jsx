@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { dashboardAPI } from "../api/axios";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 import { useI18n } from "../contexts/I18nContext";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
@@ -28,6 +29,7 @@ const PresidentDashboard = () => {
         const response = await dashboardAPI.getPresident();
         setData(response.data.data);
       } catch (error) {
+        toast.error(error.response?.data?.message || error.translatedMessage || t("common.erreur"));
         console.error("Erreur chargement dashboard:", error);
       } finally {
         setLoading(false);

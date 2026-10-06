@@ -17,7 +17,8 @@ const FormationsPage = () => {
         setError(false);
         const res = await formationAPI.getAll();
         setFormations(res.data?.data || []);
-      } catch {
+      } catch (error) {
+        console.error(error);
         setError(true);
       } finally {
         setLoading(false);

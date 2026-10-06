@@ -35,7 +35,7 @@ const NewsDetailPage = () => {
       setComments(data.comments || []);
     } catch (error) {
       console.error("Erreur:", error);
-      toast.error(t('news.non_trouvee'));
+      toast.error(error.response?.data?.message || error.translatedMessage || t('news.non_trouvee'));
       navigate("/");
     } finally {
       setLoading(false);
@@ -70,7 +70,7 @@ const NewsDetailPage = () => {
       toast.success(t('news.succes_supprimer'));
       navigate("/");
     } catch (error) {
-      toast.error(t('news.erreur'));
+      toast.error(error.response?.data?.message || error.translatedMessage || t('news.erreur'));
     }
   };
 

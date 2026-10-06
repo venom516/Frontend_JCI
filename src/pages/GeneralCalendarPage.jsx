@@ -53,7 +53,7 @@ export default function GeneralCalendarPage() {
     try {
       const res = await calendarAPI.getGeneral();
       setEvents(res.data.data || []);
-    } catch { toast.error(t("common.erreur")); }
+    } catch (error) { toast.error(error.response?.data?.message || error.translatedMessage || t("common.erreur")); }
     finally { setLoading(false); }
   };
 
@@ -104,7 +104,7 @@ export default function GeneralCalendarPage() {
       }
       setShowForm(false);
       fetchEvents();
-    } catch { toast.error(t("common.erreur")); }
+    } catch (error) { toast.error(error.response?.data?.message || error.translatedMessage || t("common.erreur")); }
   };
 
   const handleDelete = async (id) => {
@@ -114,7 +114,7 @@ export default function GeneralCalendarPage() {
       toast.success(t("calendar.toast_deleted"));
       setShowDetail(false);
       fetchEvents();
-    } catch { toast.error(t("common.erreur")); }
+    } catch (error) { toast.error(error.response?.data?.message || error.translatedMessage || t("common.erreur")); }
   };
 
   const handleDateSelect = (info) => openCreate(info.startStr);
@@ -129,7 +129,7 @@ export default function GeneralCalendarPage() {
       });
       toast.success(t("calendar.toast_date_updated"));
       fetchEvents();
-    } catch { toast.error(t("common.erreur")); }
+    } catch (error) { toast.error(error.response?.data?.message || error.translatedMessage || t("common.erreur")); }
   };
 
   const handleEventResize = async (info) => {
@@ -141,7 +141,7 @@ export default function GeneralCalendarPage() {
       });
       toast.success(t("calendar.toast_duration_updated"));
       fetchEvents();
-    } catch { toast.error(t("common.erreur")); }
+    } catch (error) { toast.error(error.response?.data?.message || error.translatedMessage || t("common.erreur")); }
   };
 
   const handleViewChange = (view) => {

@@ -15,6 +15,7 @@ import {
   MapPin, Phone, Mail, Globe, ArrowRight, Calendar,
   Newspaper, AlertTriangle, Sparkles
 } from "lucide-react";
+import toast from "react-hot-toast";
 
 const API_URL = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:5000";
 
@@ -123,6 +124,7 @@ const Home = () => {
         const formations = formationsRes.value?.data?.data?.count || 0;
         setStats({ membres, evenements, action, formations });
       } catch (e) {
+        toast.error(e.response?.data?.message || e.translatedMessage || t('common.erreur'));
         console.warn("Stats fetch failed", e);
       } finally {
         setStatsLoading(false);

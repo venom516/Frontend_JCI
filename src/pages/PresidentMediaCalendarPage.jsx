@@ -59,7 +59,7 @@ export default function PresidentMediaCalendarPage() {
     try {
       const res = await calendarAPI.getMedia();
       setEvents(res.data.data || []);
-    } catch { toast.error(t("common.erreur")); }
+    } catch (error) { toast.error(error.response?.data?.message || error.translatedMessage || t("common.erreur")); }
     finally { setLoading(false); }
   };
 
@@ -109,7 +109,7 @@ export default function PresidentMediaCalendarPage() {
       }
       setShowForm(false);
       fetchEvents();
-    } catch { toast.error(t("common.erreur")); }
+    } catch (error) { toast.error(error.response?.data?.message || error.translatedMessage || t("common.erreur")); }
   };
 
   const handleDelete = async (id) => {
@@ -119,7 +119,7 @@ export default function PresidentMediaCalendarPage() {
       toast.success(t("media.toast_deleted"));
       setShowDetail(false);
       fetchEvents();
-    } catch { toast.error(t("common.erreur")); }
+    } catch (error) { toast.error(error.response?.data?.message || error.translatedMessage || t("common.erreur")); }
   };
 
   const handleDateSelect = (info) => openCreate(info.startStr);
@@ -134,7 +134,7 @@ export default function PresidentMediaCalendarPage() {
       });
       toast.success(t("calendar.toast_date_updated"));
       fetchEvents();
-    } catch { toast.error(t("common.erreur")); }
+    } catch (error) { toast.error(error.response?.data?.message || error.translatedMessage || t("common.erreur")); }
   };
 
   const handleEventResize = async (info) => {
@@ -146,7 +146,7 @@ export default function PresidentMediaCalendarPage() {
       });
       toast.success(t("calendar.toast_duration_updated"));
       fetchEvents();
-    } catch { toast.error(t("common.erreur")); }
+    } catch (error) { toast.error(error.response?.data?.message || error.translatedMessage || t("common.erreur")); }
   };
 
   const handleViewChange = (view) => {

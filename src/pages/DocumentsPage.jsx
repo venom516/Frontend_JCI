@@ -89,11 +89,13 @@ var DocumentsPage = function () {
   var fetchDocuments = async function () {
     setLoading(true);
     try {
-      var response = await documentAPI.getAll({ status: filter });
+      // Un filtre vide produit ?status= : on omet la cle plutot que
+      // d'envoyer un parametre vide au serveur.
+      var response = await documentAPI.getAll(filter ? { status: filter } : {});
       setDocuments((response.data && response.data.data) || []);
     } catch (error) {
       console.error("Erreur chargement:", error);
-      toast.error(t("documents.erreur_chargement"));
+      toast.error(error.response?.data?.message || error.translatedMessage || t("documents.erreur_chargement"));
     } finally {
       setLoading(false);
     }
@@ -160,7 +162,7 @@ var DocumentsPage = function () {
       toast.success(t("documents.succes_supprime"));
       fetchDocuments();
     } catch (error) {
-      toast.error(t("common.erreur"));
+      toast.error(error.response?.data?.message || error.translatedMessage || t("common.erreur"));
     }
   };
 
@@ -170,7 +172,7 @@ var DocumentsPage = function () {
       toast.success(t("documents.succes_approuve"));
       fetchDocuments();
     } catch (error) {
-      toast.error(t("common.erreur"));
+      toast.error(error.response?.data?.message || error.translatedMessage || t("common.erreur"));
     }
   };
 
@@ -180,7 +182,7 @@ var DocumentsPage = function () {
       toast.success(t("documents.succes_archive"));
       fetchDocuments();
     } catch (error) {
-      toast.error(t("common.erreur"));
+      toast.error(error.response?.data?.message || error.translatedMessage || t("common.erreur"));
     }
   };
 
@@ -196,7 +198,7 @@ var DocumentsPage = function () {
       link.remove();
       toast.success(t("documents.succes_telechargement"));
     } catch (error) {
-      toast.error(t("documents.erreur_telechargement"));
+      toast.error(error.response?.data?.message || error.translatedMessage || t("documents.erreur_telechargement"));
     }
   };
 

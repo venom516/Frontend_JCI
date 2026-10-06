@@ -54,7 +54,7 @@ const MembreDashboard = () => {
 
     } catch (error) {
       console.error("Erreur chargement dashboard:", error);
-      toast.error(t("home.erreur_chargement"));
+      toast.error(error.response?.data?.message || error.translatedMessage || t("home.erreur_chargement"));
     } finally {
       setLoading(false);
       setRefreshing(false);

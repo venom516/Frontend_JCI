@@ -198,6 +198,8 @@ const translations = {
     "common.aucun": "Aucun",
     "common.total": "Total",
     "common.statut": "Statut",
+    "common.precedent": "Précédent",
+    "common.suivant": "Suivant",
     "common.supprime": "Supprimé",
     "common.reinitialiser": "Réinitialiser",
     "common.voir": "Voir",
@@ -479,6 +481,8 @@ const translations = {
     "members.membre_count": "membres",
     "members.actif": "Actif",
     "members.non_valide": "Non valide",
+    "members.non_inscrit": "Non inscrit",
+    "members.inactif": "Inactif",
     "members.suspendu": "Suspendu",
     "members.banni": "Banni",
     "members.refuse": "Refusé",
@@ -1287,6 +1291,8 @@ const translations = {
     "common.aucun": "لا يوجد",
     "common.total": "المجموع",
     "common.statut": "الحالة",
+    "common.precedent": "السابق",
+    "common.suivant": "التالي",
     "common.supprime": "محذوف",
     "common.reinitialiser": "إعادة تعيين",
     "common.voir": "عرض",
@@ -1568,6 +1574,8 @@ const translations = {
     "members.membre_count": "أعضاء",
     "members.actif": "نشط",
     "members.non_valide": "غير صالح",
+    "members.non_inscrit": "غير مسجّل",
+    "members.inactif": "غير نشط",
     "members.suspendu": "موقوف",
     "members.banni": "ممنوع",
     "members.refuse": "مرفوض",
@@ -2438,6 +2446,8 @@ const translations = {
     "common.aucun": "None",
     "common.total": "Total",
     "common.statut": "Status",
+    "common.precedent": "Previous",
+    "common.suivant": "Next",
     "common.supprime": "Deleted",
     "common.reinitialiser": "Reset",
     "common.voir": "View",
@@ -2726,6 +2736,8 @@ const translations = {
     "members.membre_count": "members",
     "members.actif": "Active",
     "members.non_valide": "Unverified",
+    "members.non_inscrit": "Not registered",
+    "members.inactif": "Inactive",
     "members.suspendu": "Suspended",
     "members.banni": "Banned",
     "members.refuse": "Refused",
@@ -3432,13 +3444,18 @@ export const I18nProvider = ({ children }) => {
   };
 
   const translateMemberStatus = (status) => {
+    // Cles = enum exact de Membre.status cote backend (accents et tirets compris).
+    // "en_attente" et "non-valide" n'existaient pas dans le modele : la cle
+    // ratée retombait sur le retour par defaut et affichait le code brut.
     const map = {
-      'actif': t('members.actif'),
-      'en_attente': t('members.en_attente'),
+      'non-inscrit': t('members.non_inscrit'),
       'en-attente': t('members.en_attente'),
-      'non-valide': t('members.non_valide'),
+      'actif': t('members.actif'),
       'suspendu': t('members.suspendu'),
-      'banni': t('members.banni')
+      'banni': t('members.banni'),
+      'refusé': t('members.refuse'),
+      'inactif': t('members.inactif'),
+      'non-validé': t('members.non_valide')
     };
     return map[status] || status;
   };
@@ -3460,8 +3477,11 @@ export const I18nProvider = ({ children }) => {
   };
 
   const translateSituation = (situation) => {
+    // Les pages enregistrent "Etudiant" et "Etudiant" avec accent : les deux
+    // graphies circulent en base, les deux doivent resolver au meme libelle.
     const map = {
       'Etudiant': t('members.etudiant'),
+      'Étudiant': t('members.etudiant'),
       'Professionnel': t('members.professionnel'),
       'Autre': t('members.autre')
     };

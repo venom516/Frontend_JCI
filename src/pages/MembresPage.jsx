@@ -16,8 +16,6 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-const UNIQUE_ROLES = ["President", "Conseiller Juridique", "ConseillerMedia", "Conseiller IT", "Conseiller 100% Efficacité", "PPI", "Directeur Exécutif"];
-
 export default function MembresPage() {
   const { t, formatDate } = useI18n();
   const { user, isPresident } = useAuth();
@@ -42,7 +40,7 @@ export default function MembresPage() {
   const fetchMembres = async () => {
     setLoading(true);
     try { const r = await membreAPI.getAll(); setMembres(r.data.data || []); }
-    catch (e) { toast.error(t("members.erreur_chargement")); }
+    catch (e) { toast.error(e.response?.data?.message || e.translatedMessage || t("members.erreur_chargement")); }
     finally { setLoading(false); }
   };
 
@@ -52,17 +50,17 @@ export default function MembresPage() {
   const fetchStats = async () => {
     if (!canViewStats) return;
     try { const r = await membreAPI.getStats(); setStats(r.data.data || {}); }
-    catch (e) { console.error("Erreur stats:", e); }
+    catch (e) { toast.error(e.response?.data?.message || e.translatedMessage || t("common.erreur")); console.error("Erreur stats:", e); }
   };
 
   const fetchRoles = async () => {
     try { const r = await membreAPI.getAllRoles(); setRoles(r.data.data || []); }
-    catch (e) { console.error(e); }
+    catch (e) { toast.error(e.response?.data?.message || e.translatedMessage || t("common.erreur")); console.error(e); }
   };
 
   const fetchEntretiens = async () => {
     try { const r = await entretienAPI.getAll({ limit: 1000 }); setEntretiens(r.data.data || []); }
-    catch (e) { console.error(e); }
+    catch (e) { toast.error(e.response?.data?.message || e.translatedMessage || t("common.erreur")); console.error(e); }
   };
 
   const getEntretienStatus = (membreId) => {
@@ -83,19 +81,19 @@ export default function MembresPage() {
 
   const handleValidate = async (id, action) => {
     try { await membreAPI.validate(id, action); toast.success(t("members.succes_validation")); fetchMembres(); fetchStats(); }
-    catch (e) { toast.error(t("members.erreur_validation")); }
+    catch (e) { toast.error(e.response?.data?.message || e.translatedMessage || t("members.erreur_validation")); }
   };
 
   const handleSuspendre = async (id) => {
     if (!window.confirm(t("members.confirmer_suspension"))) return;
     try { await membreAPI.suspendre(id); toast.success(t("members.succes_suspendu")); fetchMembres(); fetchStats(); }
-    catch (e) { toast.error(t("common.erreur")); }
+    catch (e) { toast.error(e.response?.data?.message || e.translatedMessage || t("common.erreur")); }
   };
 
   const handleReactiver = async (id) => {
     if (!window.confirm(t("members.confirmer_reactivation"))) return;
     try { await membreAPI.reactiver(id); toast.success(t("members.succes_reactive")); fetchMembres(); fetchStats(); }
-    catch (e) { toast.error(t("common.erreur")); }
+    catch (e) { toast.error(e.response?.data?.message || e.translatedMessage || t("common.erreur")); }
   };
 
   const handleDelete = async (id) => {
@@ -154,24 +152,26 @@ export default function MembresPage() {
     try {
       const p = { ...editForm };
       if (!isPresident) { delete p.role; delete p.status; }
-      // Vérifier unicité du rôle côté frontend
-      if (p.role && p.role !== selectedMembre.role && UNIQUE_ROLES.includes(p.role)) {
-        const alreadyAssigned = membres.some(m => m._id !== selectedMembre._id && m.role === p.role && m.status !== 'refusé');
-        if (alreadyAssigned) {
-          toast.error("Ce rôle est déjà attribué à un autre membre.");
-          return;
-        }
-      }
+      // L'unicite d'un role est decidee par le backend (UNIQUE_ROLES +
+      // rejet 400) : une copie locale finit toujours par diverger.
       await membreAPI.update(selectedMembre._id, p);
       toast.success(t("members.succes_mis_a_jour"));
       setShowEditModal(false); setPhotoPreview(null); fetchMembres();
-    } catch (e) { toast.error(t("members.erreur_mise_a_jour")); }
+    } catch (e) { toast.error(e.response?.data?.message || e.translatedMessage || t("members.erreur_mise_a_jour")); }
   };
 
+  // Cles = valeurs exactes de l'enum backend (Membre.status) : "en-attente"
+  // a un tiret, "non-validé" et "non-inscrit" des accents. Une orthographe
+  // differente tomberait silencieusement dans le repli.
   const getStatusBadge = (s) => ({
-    actif: "default", en_attente: "secondary", "en-attente": "secondary",
-    "non-valide": "destructive", suspendu: "destructive", banni: "destructive",
-    refusé: "outline"
+    "non-inscrit": "secondary",
+    "en-attente": "secondary",
+    actif: "default",
+    "non-validé": "destructive",
+    suspendu: "destructive",
+    banni: "destructive",
+    refusé: "outline",
+    inactif: "secondary"
   })[s] || "secondary";
 
   const getRoleLabel = (r) => ({
@@ -185,9 +185,12 @@ export default function MembresPage() {
   })[r] || r;
 
   const getStatusLabel = (s) => ({
-    actif: t("members.actif"), en_attente: t("members.en_attente"),
-    "en-attente": t("members.en_attente"), "non-valide": t("members.non_valide"),
-    suspendu: t("members.suspendu"), banni: t("members.banni"),
+    "non-inscrit": t("members.non_valide"),
+    "en-attente": t("members.en_attente"),
+    actif: t("members.actif"),
+    "non-validé": t("members.non_valide"),
+    suspendu: t("members.suspendu"),
+    banni: t("members.banni"),
     refusé: t("members.refuse")
   })[s] || s;
 
@@ -242,15 +245,17 @@ export default function MembresPage() {
             </div>
             <select value={filterRole} onChange={(e) => setFilterRole(e.target.value)} className="flex h-10 w-full sm:w-[180px] rounded-md border border-input bg-background px-3 py-2 text-sm">
               <option value="all">{t("members.tous_roles")}</option>
-              {["President","Conseiller Juridique","Sénateur","PP","Past President","PPI","SecretaireGeneral","ConseillerMedia","Membre"].map(r => (
-                <option key={r} value={r}>{getRoleLabel(r)}</option>
-              ))}
+              {(roles.length > 0 ? roles : [{ name: "Membre" }, { name: "President" }, { name: "SecretaireGeneral" }, { name: "ConseillerMedia" }]).map(r => {
+                const nom = r.name || r;
+                return <option key={nom} value={nom}>{getRoleLabel(nom)}</option>;
+              })}
             </select>
             <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="flex h-10 w-full sm:w-[160px] rounded-md border border-input bg-background px-3 py-2 text-sm">
               <option value="all">{t("members.tous_statuts")}</option>
               <option value="actif">{t("members.actif")}</option>
-              <option value="en_attente">{t("members.en_attente")}</option>
+              <option value="en-attente">{t("members.en_attente")}</option>
               <option value="suspendu">{t("members.suspendu")}</option>
+              <option value="banni">{t("members.banni")}</option>
               <option value="refusé">{t("members.refuse")}</option>
             </select>
             <Button variant="ghost" size="sm" onClick={() => { setSearch(""); setFilterRole("all"); setFilterStatus("all"); }}>
@@ -425,8 +430,9 @@ export default function MembresPage() {
                     <Label>{t("members.statut")}</Label>
                     <select value={editForm.status} onChange={(e) => setEditForm(p => ({ ...p, status: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                       <option value="actif">{t("members.actif")}</option>
-                      <option value="en_attente">{t("members.en_attente")}</option>
+                      <option value="en-attente">{t("members.en_attente")}</option>
                       <option value="suspendu">{t("members.suspendu")}</option>
+                      <option value="banni">{t("members.banni")}</option>
                       <option value="refusé">{t("members.refuse")}</option>
                     </select>
                   </div>

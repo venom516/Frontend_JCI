@@ -27,7 +27,7 @@ const EventsPage = () => {
     description: "",
     date: "",
     lieu: "",
-    maxParticipants: 0,
+    maxParticipants: "",
     ordreDuJour: "",
   });
 
@@ -41,7 +41,7 @@ const EventsPage = () => {
       const response = await eventAPI.getAll();
       setEvents(response.data.data || []);
     } catch (error) {
-      toast.error(t('events.erreur_chargement'));
+      toast.error(error.response?.data?.message || error.translatedMessage || t('events.erreur_chargement'));
     } finally {
       setLoading(false);
     }
@@ -65,11 +65,17 @@ const EventsPage = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      // Le modele backend attend un Number (default 0) : "" serait casté en
+      // null et stocké. On normalise avant l'envoi.
+      const payload = {
+        ...form,
+        maxParticipants: form.maxParticipants === "" ? 0 : Number(form.maxParticipants),
+      };
       if (editingEvent) {
-        await eventAPI.update(editingEvent._id, form);
+        await eventAPI.update(editingEvent._id, payload);
         toast.success(t('events.succes_modification'));
       } else {
-        await eventAPI.create(form);
+        await eventAPI.create(payload);
         toast.success(t('events.succes_creation'));
       }
       resetForm();
@@ -86,7 +92,7 @@ const EventsPage = () => {
     setForm({
       titre: event.titre,
       type: event.type,
-      description: event.description,
+      description: event.description || "",
       date: event.date.split("T")[0],
       lieu: event.lieu,
       maxParticipants: event.maxParticipants || "",
@@ -102,7 +108,7 @@ const EventsPage = () => {
       toast.success(t('events.succes_suppression'));
       fetchEvents();
     } catch (error) {
-      toast.error(t('events.erreur_chargement'));
+      toast.error(error.response?.data?.message || error.translatedMessage || t('events.erreur_chargement'));
     }
   };
 
@@ -112,7 +118,7 @@ const EventsPage = () => {
       toast.success(response.data.message);
       fetchEvents();
     } catch (error) {
-      toast.error(t('events.erreur_chargement'));
+      toast.error(error.response?.data?.message || error.translatedMessage || t('events.erreur_chargement'));
     }
   };
 
@@ -122,7 +128,7 @@ const EventsPage = () => {
       toast.success(t('events.succes_statut'));
       fetchEvents();
     } catch (error) {
-      toast.error(t('events.erreur_chargement'));
+      toast.error(error.response?.data?.message || error.translatedMessage || t('events.erreur_chargement'));
     }
   };
 
@@ -142,7 +148,7 @@ const EventsPage = () => {
       Action: Zap,
       Formation: BookOpen,
       Manifestation: Megaphone,
-      Reunion: Users,
+      Réunion: Users,
       AGP: Building,
     };
     return icons[type] || List;
@@ -316,7 +322,7 @@ const EventsPage = () => {
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2 shrink-0">
-                      {event.status !== "terminee" && event.status !== "annulee" && (
+                      {event.status !== "terminée" && event.status !== "annulée" && (
                         <Button
                           size="sm"
                           variant={isParticipant ? "destructive" : undefined}

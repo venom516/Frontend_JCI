@@ -20,6 +20,10 @@ const TasksPage = () => {
   const isMediaView = window.location.pathname.includes("/media");
   const taskType = isMediaView ? "media" : "normal";
   const canAssign = isPresident || user?.role === "VPFD" || user?.role === "ConseillerMedia";
+  // Miroir de taskController : update/delete reserves au President, au VPFD et
+  // au createur de la tache. Le bouton Modifier ne doit pas etre affichable
+  // aux autres roles (sinon formulaire ouvrable mais rejete en 403).
+  const canManageTask = (task) => isPresident || user?.role === "VPFD" || task.createdBy?._id === user?._id;
 
   const [tasks, setTasks] = useState([]);
   const [membres, setMembres] = useState([]);
@@ -53,7 +57,7 @@ const TasksPage = () => {
         setMembres(members);
       }
     } catch (error) {
-      toast.error(t('common.chargement'));
+      toast.error(error.response?.data?.message || error.translatedMessage || t('common.chargement'));
     } finally {
       setLoading(false);
     }
@@ -140,7 +144,7 @@ const TasksPage = () => {
       toast.success(t('common.supprimer'));
       fetchData();
     } catch (error) {
-      toast.error(t('common.chargement'));
+      toast.error(error.response?.data?.message || error.translatedMessage || t('common.chargement'));
     }
   };
 
@@ -283,10 +287,12 @@ const TasksPage = () => {
                     </div>
                   </div>
                   <div className="flex gap-1.5 shrink-0">
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(task)} title={t('common.modifier')}>
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    {(isPresident || user?.role === "VPFD" || task.createdBy?._id === user?._id) && (
+                    {canManageTask(task) && (
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(task)} title={t('common.modifier')}>
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {canManageTask(task) && (
                       <Button variant="ghost" size="icon" onClick={() => handleDelete(task._id)} title={t('common.supprimer')}>
                         <Trash2 className="w-4 h-4" />
                       </Button>

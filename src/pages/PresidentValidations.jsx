@@ -60,7 +60,7 @@ const PresidentValidations = ({ defaultTab = "membres" }) => {
     try {
       const res = await membreAPI.getAll({ status: "en-attente,non-validé" });
       setPending(res.data.data || []);
-    } catch { toast.error(t('validations.erreur_chargement')); }
+    } catch (error) { toast.error(error.response?.data?.message || error.translatedMessage || t('validations.erreur_chargement')); }
     finally { setLoading(false); }
   };
 
@@ -83,7 +83,7 @@ const PresidentValidations = ({ defaultTab = "membres" }) => {
         realises: data.filter(e => e.status === "réalisé").length,
         annules: data.filter(e => e.status === "annulé").length,
       });
-    } catch { toast.error(t('validations.erreur_chargement')); }
+    } catch (error) { toast.error(error.response?.data?.message || error.translatedMessage || t('validations.erreur_chargement')); }
     finally { setLoading(false); }
   };
 
@@ -152,8 +152,8 @@ const PresidentValidations = ({ defaultTab = "membres" }) => {
       const payload = { date: formDate, commentaire: formCommentaire, lieu: formLieu, lien: formLien };
       if (editId) {
         await entretienAPI.update(editId, payload);
-        if (formStatus === "approuvé") await entretienAPI.approve(editId).catch(() => {});
-        else if (formStatus === "annulé") await entretienAPI.reject(editId).catch(() => {});
+        if (formStatus === "approuvé") await entretienAPI.approve(editId).catch((err) => { toast.error(err.response?.data?.message || err.translatedMessage || t('common.erreur')); });
+        else if (formStatus === "annulé") await entretienAPI.reject(editId).catch((err) => { toast.error(err.response?.data?.message || err.translatedMessage || t('common.erreur')); });
         toast.success(t('president.entretien_modifie'));
       } else {
         await entretienAPI.create({ ...payload, membre: formMembre });
@@ -213,7 +213,7 @@ const PresidentValidations = ({ defaultTab = "membres" }) => {
       toast.success(t('entretiens.marque_realise'));
       fetchEntretiens();
     } catch (e) {
-      toast.error(t('common.erreur'));
+      toast.error(e.response?.data?.message || e.translatedMessage || t('common.erreur'));
     } finally { setProcessing(false); }
   };
 
@@ -240,13 +240,13 @@ const PresidentValidations = ({ defaultTab = "membres" }) => {
 
   const statusBadge = (status) => {
     const classes = {
-      "demandé": "bg-amber-100 text-amber-800",
-      "en-attente": "bg-blue-100 text-blue-800",
-      "approuvé": "bg-emerald-100 text-emerald-800",
-      "réalisé": "bg-cyan-100 text-cyan-800",
-      "annulé": "bg-red-100 text-red-800",
+      "demandé": "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200",
+      "en-attente": "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200",
+      "approuvé": "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
+      "réalisé": "bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-200",
+      "annulé": "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200",
     };
-    return classes[status] || "bg-gray-100 text-gray-800";
+    return classes[status] || "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
   };
 
   return (

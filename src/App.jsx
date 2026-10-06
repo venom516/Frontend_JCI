@@ -11,6 +11,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import LoadingScreen from "./components/common/LoadingScreen";
 import ProtectedRoute from "./components/common/ProtectedRoute";
+import { useI18n } from "./contexts/I18nContext";
 
 import Home from "./pages/Home";
 import LoginPage from "./pages/LoginPage";
@@ -59,6 +60,26 @@ function ProtectedLayout({ children }) {
     <DashboardLayout>
       {children}
     </DashboardLayout>
+  );
+}
+
+// Sans route "*", une URL inconnue rend un <Routes> vide : page blanche.
+function NotFoundPage() {
+  const { t } = useI18n();
+  return (
+    <PublicLayout>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4">
+        <p className="text-7xl font-bold text-primary">404</p>
+        <h1 className="mt-4 text-xl font-semibold">{t("error.route_non_trouvee")}</h1>
+        <button
+          type="button"
+          onClick={() => (window.location.href = "/")}
+          className="mt-6 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+        >
+          {t("common.retour_accueil")}
+        </button>
+      </div>
+    </PublicLayout>
   );
 }
 
@@ -134,8 +155,9 @@ function AppRoutes() {
       <Route path="/dashboard/ppi" element={<ProtectedRoute roles={["PPI"]}><ProtectedLayout><MembreDashboard /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/dashboard/vpfd" element={<ProtectedRoute roles={["VPFD"]}><ProtectedLayout><DashboardVPFD /></ProtectedLayout></ProtectedRoute>} />
       <Route path="/dashboard/vppre" element={<ProtectedRoute roles={["VPPRE"]}><ProtectedLayout><DashboardVPPRE /></ProtectedLayout></ProtectedRoute>} />
-      <Route path="/vpfd/entretiens" element={<ProtectedRoute roles={["VPFD", "President"]}><ProtectedLayout><PresidentValidations defaultTab="entretiens" /></ProtectedLayout></ProtectedRoute>} />
-    </Routes>
+        <Route path="/vpfd/entretiens" element={<ProtectedRoute roles={["VPFD", "President"]}><ProtectedLayout><PresidentValidations defaultTab="entretiens" /></ProtectedLayout></ProtectedRoute>} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
   );
 }
 

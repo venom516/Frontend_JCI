@@ -39,7 +39,7 @@ const DashboardVPFD = () => {
       setFormationCount(countRes.data.data.count);
       setFormations(formationsRes.data.data || []);
       setEntretiens(entretiensRes.data.data || []);
-    } catch { toast.error(t('common.erreur')); }
+    } catch (e) { toast.error(e.response?.data?.message || e.translatedMessage || t('common.erreur')); }
     finally { setLoading(false); }
   };
 
@@ -85,12 +85,12 @@ const DashboardVPFD = () => {
       await formationAPI.delete(id);
       toast.success(t('formations.supprimee'));
       fetchData();
-    } catch (e) { toast.error(t('common.erreur')); }
+    } catch (e) { toast.error(e.response?.data?.message || e.translatedMessage || t('common.erreur')); }
   };
 
   const statusBadge = (status) => {
-    const classes = { "demandé": "bg-amber-100 text-amber-800", "en-attente": "bg-blue-100 text-blue-800", "approuvé": "bg-emerald-100 text-emerald-800", "réalisé": "bg-cyan-100 text-cyan-800", "annulé": "bg-red-100 text-red-800" };
-    return classes[status] || "bg-gray-100 text-gray-800";
+    const classes = { "demandé": "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200", "en-attente": "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200", "approuvé": "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200", "réalisé": "bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-200", "annulé": "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200" };
+    return classes[status] || "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
   };
 
   if (loading) return <Skeleton className="h-96 w-full" />;

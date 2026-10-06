@@ -20,7 +20,7 @@ const PresidentContacts = () => {
     try {
       const res = await contactAPI.getAll();
       setContacts(res.data.data || []);
-    } catch { toast.error(t('president.erreur_chargement_messages')); }
+    } catch (error) { toast.error(error.response?.data?.message || error.translatedMessage || t('president.erreur_chargement_messages')); }
     finally { setLoading(false); }
   };
 
@@ -29,7 +29,7 @@ const PresidentContacts = () => {
       await contactAPI.markAsRead(id);
       setContacts(contacts.map(c => c._id === id ? { ...c, lu: true } : c));
       toast.success(t('president.marque_lu'));
-    } catch { toast.error(t('common.erreur')); }
+    } catch (error) { toast.error(error.response?.data?.message || error.translatedMessage || t('common.erreur')); }
   };
 
   const handleDelete = async (id) => {
@@ -39,7 +39,7 @@ const PresidentContacts = () => {
       setContacts(contacts.filter(c => c._id !== id));
       if (selected === id) setSelected(null);
       toast.success(t('president.message_supprime'));
-    } catch { toast.error(t('common.erreur')); }
+    } catch (error) { toast.error(error.response?.data?.message || error.translatedMessage || t('common.erreur')); }
   };
 
   if (loading) return <Skeleton className="h-96 w-full" />;
