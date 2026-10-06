@@ -10,7 +10,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "../components/ui/select";
 import { Skeleton } from "../components/ui/skeleton";
-import { CheckCircle, Calendar, Clock, MapPin, Trash2, Pencil, CheckSquare, XCircle, Plus, UserX } from "lucide-react";
+import { CheckCircle, Calendar, Clock, MapPin, Trash2, Pencil, CheckSquare, XCircle, UserX } from "lucide-react";
 
 const StatBadge = ({ label, value, color }) => {
   const colors = {
@@ -121,17 +121,6 @@ const PresidentValidations = ({ defaultTab = "membres" }) => {
     } catch (e) {
       toast.error(e.response?.data?.message || t('common.erreur'));
     } finally { setProcessing(false); }
-  };
-
-  const openAddForm = () => {
-    setEditId(null);
-    setFormDate("");
-    setFormMembre("");
-    setFormLieu("");
-    setFormCommentaire("");
-    setFormLien("");
-    setFormStatus("demandé");
-    setShowForm(true);
   };
 
   const openEditForm = (e) => {
@@ -345,9 +334,6 @@ const PresidentValidations = ({ defaultTab = "membres" }) => {
                   </Button>
                 ))}
               </div>
-              <Button size="sm" onClick={openAddForm}>
-                <Plus className="w-4 h-4 mr-1.5" /> {t('president.ajouter_entretien')}
-              </Button>
             </div>
 
             {showForm && (
