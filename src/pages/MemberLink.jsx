@@ -11,7 +11,6 @@ const MemberLink = () => {
 
   useEffect(() => {
     const token = searchParams.get("token");
-    const page = searchParams.get("page") || "dashboard";
 
     if (!token) {
       navigate("/login", { replace: true });
@@ -26,16 +25,7 @@ const MemberLink = () => {
         setToken(newToken);
         setUser(membre);
 
-        const routes = {
-          dashboard: "/dashboard/membre",
-          tasks: "/tasks-events",
-          events: "/tasks-events",
-          calendar: "/tasks-events",
-          profile: "/profile",
-          entretien: "/dashboard/membre",
-        };
-        const target = routes[page] || "/dashboard/membre";
-        navigate(target, { replace: true });
+        navigate("/dashboard", { replace: true });
       } catch {
         navigate("/login?expired=1", { replace: true });
       }

@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useI18n } from "../contexts/I18nContext";
-import { dashboardAPI, newsAPI, taskAPI, eventAPI, formationAPI } from "../api/axios";
+import { dashboardAPI, newsAPI, taskAPI, eventAPI } from "../api/axios";
+import { useAutoRefresh } from "../hooks/useAutoRefresh";
 import { Skeleton } from "../components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { ClipboardList, CheckCircle, Calendar, Users, Mail, Pencil, Newspaper, RefreshCw, Eye, Clock, GraduationCap, Target, ChevronRight, Award, Star, Shield } from "lucide-react";
+import { ClipboardList, CheckCircle, Calendar, Users, Mail, Pencil, Newspaper, RefreshCw, Eye, Clock, Target, ChevronRight, Award, Star, Shield } from "lucide-react";
 
 const roleConfig = {
   Membre: { title: "dashboard.membre", icon: Users, badge: "bg-primary-500 to-accent-cyan" },
@@ -29,13 +30,15 @@ const MembreDashboard = () => {
   const [profileData, setProfileData] = useState(null);
   const [upcomingTasks, setUpcomingTasks] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
-  const [upcomingFormations, setUpcomingFormations] = useState([]);
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  const fetchData = async () => {
+  useAutoRefresh(() => fetchData(true));
+
+  const fetchData = async (quiet = false) => {
+    if (!quiet) setLoading(true);
     try {
       const response = await dashboardAPI.getMembre();
       setProfileData(response.data.data);
@@ -43,21 +46,21 @@ const MembreDashboard = () => {
       const newsRes = await newsAPI.getPublic({ limit: 5 });
       setRecentNews(newsRes.data.data || []);
 
-      const [tasksRes, eventsRes, formationsRes] = await Promise.all([
+      const [tasksRes, eventsRes] = await Promise.all([
         taskAPI.getAll({ limit: 5, sort: 'deadline' }).catch(() => ({ data: { data: [] } })),
-        eventAPI.getAll({ limit: 5 }).catch(() => ({ data: { data: [] } })),
-        formationAPI.getAll({ limit: 5 }).catch(() => ({ data: { data: [] } }))
+        eventAPI.getAll({ limit: 5 }).catch(() => ({ data: { data: [] } }))
       ]);
       setUpcomingTasks(tasksRes.data.data || []);
       setUpcomingEvents(eventsRes.data.data || []);
-      setUpcomingFormations(formationsRes.data.data || []);
 
     } catch (error) {
       console.error("Erreur chargement dashboard:", error);
       toast.error(t("home.erreur_chargement"));
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (!quiet) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   };
 
@@ -138,7 +141,7 @@ const MembreDashboard = () => {
             <Calendar className="w-6 h-6 text-accent-cyan" />
             <CardTitle className="section-title font-display text-xl font-bold text-surface-800">{t("dashboard.calendrier")}</CardTitle>
           </div>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 gap-6">
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Target className="w-4 h-4 text-primary-500" />
@@ -175,27 +178,6 @@ const MembreDashboard = () => {
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-surface-800 truncate">{e.titre || e.title}</p>
                         <p className="text-xs text-surface-500">{e.date ? formatDate(e.date) : ''}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <GraduationCap className="w-4 h-4 text-accent-amber" />
-                <h3 className="font-semibold text-surface-700 text-sm uppercase tracking-wide">{t("dashboard.formations")}</h3>
-              </div>
-              {upcomingFormations.length === 0 ? (
-                <p className="text-sm text-surface-400 italic">{t("dashboard.aucune_formation")}</p>
-              ) : (
-                <div className="space-y-2">
-                  {upcomingFormations.slice(0, 3).map(f => (
-                    <div key={f._id} className="flex items-start gap-2 p-2 rounded-lg bg-surface-50/80">
-                      <GraduationCap className="w-4 h-4 text-accent-amber mt-0.5 shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-surface-800 truncate">{f.titre || f.title}</p>
-                        <p className="text-xs text-surface-500">{f.date ? formatDate(f.date) : ''}</p>
                       </div>
                     </div>
                   ))}

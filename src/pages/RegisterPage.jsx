@@ -117,7 +117,7 @@ const RegisterPage = () => {
         toast.success(gt("register.succes_inscription"));
         setForm({
           nom: "", prenom: "", email: "", password: "",
-          confirmPassword: "", telephone: "", adresse: "", situationProfessionnelle: "Autre",
+    confirmPassword: "", telephone: "", adresse: "", sexe: "", situationProfessionnelle: "Autre",
           societe: "", dateNaissance: "", urlFacebook: "", urlLinkedIn: "",
           langues: "", competences: "", hobbies: "", pointsForts: "",
           association: "", connaissanceZone: "", connaissanceJCI: "",
@@ -216,6 +216,15 @@ const RegisterPage = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
+                <Label className="text-white/90">{gt("register.sexe")}</Label>
+                <select name="sexe" className={"flex h-10 w-full rounded-md border border-white/20 bg-white/10 backdrop-blur px-3 py-2 text-base text-white shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-white/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/40 disabled:cursor-not-allowed disabled:opacity-50 " + inputCls("sexe")} value={form.sexe} onChange={handleChange}>
+                  <option value="" className="text-gray-800">{gt("register.sexe_default")}</option>
+                  <option value="Homme" className="text-gray-800">{gt("register.homme")}</option>
+                  <option value="Femme" className="text-gray-800">{gt("register.femme")}</option>
+                </select>
+                {errMsg("sexe")}
+              </div>
+              <div>
                 <Label className="text-white/90">{gt("register.profession")}</Label>
                 <select name="situationProfessionnelle" className={"flex h-10 w-full rounded-md border border-white/20 bg-white/10 backdrop-blur px-3 py-2 text-base text-white shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-white/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/40 disabled:cursor-not-allowed disabled:opacity-50 " + inputCls("situationProfessionnelle")} value={form.situationProfessionnelle} onChange={handleChange}>
                   <option value="" className="text-gray-800">{gt("register.profession_default")}</option>
@@ -225,10 +234,11 @@ const RegisterPage = () => {
                 </select>
                 {errMsg("situationProfessionnelle")}
               </div>
-              <div>
-                <Label className="text-white/90">{gt("register.societe")}</Label>
-                <Input name="societe" type="text" value={form.societe} onChange={handleChange} placeholder={gt("register.societe")} />
-              </div>
+            </div>
+
+            <div>
+              <Label className="text-white/90">{gt("register.societe")}</Label>
+              <Input name="societe" type="text" value={form.societe} onChange={handleChange} placeholder={gt("register.societe")} />
             </div>
 
             <div>

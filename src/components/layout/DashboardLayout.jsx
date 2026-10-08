@@ -42,7 +42,7 @@ const DashboardLayout = ({ children }) => {
               size="sm"
               onClick={toggle}
               className="h-8 w-8 p-0"
-              aria-label="Menu"
+              aria-label={t("common.menu")}
             >
               <Menu className="h-5 w-5" />
             </Button>

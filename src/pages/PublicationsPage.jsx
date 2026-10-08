@@ -5,7 +5,7 @@ import { publicationAPI } from "../api/axios";
 import toast from "react-hot-toast";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
+import { StatusBadge } from "../components/common/StatusBadge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
@@ -27,14 +27,7 @@ import {
 
 var API_URL = import.meta.env.VITE_API_URL
   ? import.meta.env.VITE_API_URL.replace("/api", "")
-  : "http://localhost:5000";
-
-var statusBadgeClass = {
-  "\u00e9cr\u00e9\u00e9e": "bg-blue-100 text-blue-700 border-blue-200",
-  "en-attente": "bg-amber-100 text-amber-700 border-amber-200",
-  "publi\u00e9e": "bg-emerald-100 text-emerald-700 border-emerald-200",
-  "archiv\u00e9e": "bg-rose-100 text-rose-700 border-rose-200",
-};
+  : "http://localhost:5001";
 
 var typeIconComponents = {
   Photo: <Image className="w-3 h-3" />,
@@ -75,6 +68,9 @@ var PublicationsPage = function () {
   var _submittingState = useState(false);
   var submitting = _submittingState[0];
   var setSubmitting = _submittingState[1];
+  var _statsState = useState({ total: 0, cr\u00e9es: 0, publi\u00e9es: 0, archiv\u00e9es: 0 });
+  var stats = _statsState[0];
+  var setStats = _statsState[1];
 
   var fetchPublications = async function () {
     try {
@@ -87,8 +83,39 @@ var PublicationsPage = function () {
     }
   };
 
+  var fetchStats = async function () {
+    try {
+      var res = await publicationAPI.getStats();
+      var d = (res.data && res.data.data) || {};
+      setStats({
+        total: d.total || 0,
+        cr\u00e9es: d.creees || 0,
+        publi\u00e9es: d.publiees || 0,
+        archiv\u00e9es: d.archivees || 0,
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(function () {
     fetchPublications();
+    fetchStats();
+  }, []);
+
+  useEffect(function () {
+    var onFocus = function () { fetchStats(); };
+    var onVisibility = function () {
+      if (document.visibilityState === "visible") fetchStats();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    var timer = setInterval(fetchStats, 30000);
+    return function () {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+      clearInterval(timer);
+    };
   }, []);
 
 
@@ -193,21 +220,6 @@ var PublicationsPage = function () {
       );
     }
   };
-
-  var stats = {
-    total: publications.length,
-    cr\u00e9es: publications.filter(function (p) {
-      return p.status === "\u00e9cr\u00e9\u00e9e" || p.status === "en-attente";
-    }).length,
-    publi\u00e9es: publications.filter(function (p) {
-      return p.status === "publi\u00e9e";
-    }).length,
-    archiv\u00e9es: publications.filter(function (p) {
-      return p.status === "archiv\u00e9e";
-    }).length,
-  };
-
-
 
   if (!isMedia && !isPresident) {
     return (
@@ -314,25 +326,7 @@ var PublicationsPage = function () {
                             <h3 className="font-display font-semibold text-surface-900 truncate">
                               {pub.titre}
                             </h3>
-                            <Badge
-                              className={
-                                "shrink-0 " +
-                                (statusBadgeClass[pub.status] || "bg-blue-100 text-blue-700")
-                              }
-                            >
-                              {t(
-                                "publications." +
-                                  (pub.status === "\u00e9cr\u00e9\u00e9e"
-                                    ? "stat_creees"
-                                    : pub.status === "archiv\u00e9e"
-                                    ? "stat_archivees"
-                                    : pub.status === "publi\u00e9e"
-                                    ? "publiee"
-                                    : pub.status === "en-attente"
-                                    ? "en_attente"
-                                    : pub.status)
-                              ) || pub.status}
-                            </Badge>
+                            <StatusBadge status={pub.status} module="publication" />
                           </div>
                           {pub.caption && (
                             <p className="text-sm text-surface-500 mt-1 line-clamp-2">

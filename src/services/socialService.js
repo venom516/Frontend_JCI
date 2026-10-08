@@ -1,6 +1,6 @@
 const API_URL = import.meta.env.VITE_API_URL
   ? import.meta.env.VITE_API_URL.replace("/api", "")
-  : "http://localhost:5000";
+  : "http://localhost:5001";
 
 export async function fetchSocialProfiles() {
   const res = await fetch(`${API_URL}/api/social/profiles`);

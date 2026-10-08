@@ -1,26 +1,39 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useI18n } from "../contexts/I18nContext";
 import { eventAPI } from "../api/axios";
 import toast from "react-hot-toast";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
+import { StatusBadge } from "../components/common/StatusBadge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import { Label } from "../components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Skeleton } from "../components/ui/skeleton";
-import { Plus, Pencil, Trash2, Calendar, MapPin, Users, X, CheckCircle, Zap, BookOpen, Megaphone, Building, List } from "lucide-react";
+import { Plus, Pencil, Trash2, Calendar, MapPin, Users, X, CheckCircle, Zap, BookOpen, Megaphone, Building, List, Upload, Image as ImageIcon } from "lucide-react";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+
+// Les fichiers uploadés sont servis par express.static sur /uploads, et non
+// sous /api. Construire l'URL avec API_URL produisait donc un 404 sur l'image.
+const MEDIA_URL = API_URL.replace(/\/api\/?$/, "");
 
 const EventsPage = () => {
-  const { user, isPresident } = useAuth();
-  const { t, formatDate, translateStatus } = useI18n();
+    const { user } = useAuth();
+    // La gestion des événements revient au Président et au Conseiller Média.
+    const canManageEvents =
+      user?.role === "President" || user?.role === "ConseillerMedia";
+    const { t, formatDate } = useI18n();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
+  const [pendingFile, setPendingFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const fileInputRef = useRef(null);
   const [form, setForm] = useState({
     titre: "",
     type: "Action",
@@ -35,15 +48,25 @@ const EventsPage = () => {
     fetchEvents();
   }, []);
 
-  const fetchEvents = async () => {
-    setLoading(true);
+  const fetchEvents = async (options = {}) => {
+    const silencieux = options.silencieux === true;
+    if (!silencieux) setLoading(true);
     try {
       const response = await eventAPI.getAll();
       setEvents(response.data.data || []);
+      return true;
     } catch (error) {
-      toast.error(t('events.erreur_chargement'));
+      // Sans cela, un timeout, un 401 et une coupure réseau affichent tous
+      // le même "Erreur de chargement", ce qui masque la cause réelle.
+      console.error("[EventsPage] chargement des evenements :", error);
+      const message =
+        error.translatedMessage || error.message || t('events.erreur_chargement');
+      // Rafraîchissement après un enregistrement réussi : l'événement est
+      // bien saved, seul l'affichage de la liste a échoué.
+      toast.error(silencieux ? `${t('events.enregistre_mais_liste')} ${message}` : message);
+      return false;
     } finally {
-      setLoading(false);
+      if (!silencieux) setLoading(false);
     }
   };
 
@@ -58,24 +81,66 @@ const EventsPage = () => {
       ordreDuJour: "",
     });
     setEditingEvent(null);
+    setPendingFile(null);
+    setPreviewUrl(null);
     setShowForm(false);
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0] || null;
+    setPendingFile(file);
+    if (file && file.type.startsWith('image/')) {
+      setPreviewUrl(URL.createObjectURL(file));
+    } else {
+      setPreviewUrl(null);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0] || null;
+    setPendingFile(file);
+    if (file && file.type.startsWith('image/')) {
+      setPreviewUrl(URL.createObjectURL(file));
+    } else {
+      setPreviewUrl(null);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      if (editingEvent) {
-        await eventAPI.update(editingEvent._id, form);
-        toast.success(t('events.succes_modification'));
+      const hasFile = pendingFile instanceof File;
+      if (hasFile) {
+        const fd = new FormData();
+        Object.entries(form).forEach(([k, v]) => { if (v !== "" && v !== null && v !== undefined) fd.append(k, v); });
+        fd.append('image', pendingFile);
+        if (editingEvent) {
+          await eventAPI.update(editingEvent._id, fd);
+        } else {
+          await eventAPI.create(fd);
+        }
       } else {
-        await eventAPI.create(form);
-        toast.success(t('events.succes_creation'));
+        if (editingEvent) {
+          await eventAPI.update(editingEvent._id, form);
+        } else {
+          await eventAPI.create(form);
+        }
       }
+      toast.success(editingEvent ? t('events.succes_modification') : t('events.succes_creation'));
       resetForm();
-      fetchEvents();
+      // Attendu : sinon un échec du rechargement affiche une erreur alors que
+      // l'événement a bien été enregistré, et la liste reste obsolète.
+      await fetchEvents({ silencieux: true });
     } catch (error) {
-      toast.error(error.response?.data?.message || t('events.erreur_chargement'));
+      console.error("[EventsPage] enregistrement de l'evenement :", error);
+      toast.error(
+        error.response?.data?.message ||
+          error.translatedMessage ||
+          error.message ||
+          t('events.erreur_chargement')
+      );
     } finally {
       setLoading(false);
     }
@@ -92,49 +157,49 @@ const EventsPage = () => {
       maxParticipants: event.maxParticipants || "",
       ordreDuJour: event.ordreDuJour || "",
     });
+    setPendingFile(null);
+    setPreviewUrl(null);
     setShowForm(true);
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm(t('events.confirmer_suppression'))) return;
+    setProcessing(true);
     try {
       await eventAPI.delete(id);
       toast.success(t('events.succes_suppression'));
       fetchEvents();
     } catch (error) {
       toast.error(t('events.erreur_chargement'));
+    } finally {
+      setProcessing(false);
     }
   };
 
   const handleParticipate = async (id) => {
+    setProcessing(true);
     try {
       const response = await eventAPI.participate(id);
       toast.success(response.data.message);
       fetchEvents();
     } catch (error) {
       toast.error(t('events.erreur_chargement'));
+    } finally {
+      setProcessing(false);
     }
   };
 
   const handleStatusChange = async (id, status) => {
+    setProcessing(true);
     try {
       await eventAPI.updateStatus(id, status);
       toast.success(t('events.succes_statut'));
       fetchEvents();
     } catch (error) {
       toast.error(t('events.erreur_chargement'));
+    } finally {
+      setProcessing(false);
     }
-  };
-
-  const getStatusBadgeClass = (status) => {
-    const classes = {
-      "planifiée": "bg-blue-100 text-blue-800 hover:bg-blue-100",
-      "en-cours": "bg-amber-100 text-amber-800 hover:bg-amber-100",
-      "terminée": "bg-emerald-100 text-emerald-800 hover:bg-emerald-100",
-      "reportée": "bg-amber-100 text-amber-800 hover:bg-amber-100",
-      "annulée": "bg-red-100 text-red-800 hover:bg-red-100",
-    };
-    return classes[status] || "";
   };
 
   const getTypeIconComponent = (type) => {
@@ -142,10 +207,23 @@ const EventsPage = () => {
       Action: Zap,
       Formation: BookOpen,
       Manifestation: Megaphone,
-      Reunion: Users,
+      "Réunion": Users,
       AGP: Building,
     };
     return icons[type] || List;
+  };
+
+  const getTypeLabel = (type) => {
+    if (!type) return "";
+    const keys = {
+      Action: "events.action",
+      Formation: "events.formation",
+      Manifestation: "events.manifestation",
+      "Réunion": "events.reunion",
+      Reunion: "events.reunion",
+      AGP: "events.agp",
+    };
+    return keys[type] ? t(keys[type]) : type;
   };
 
   if (loading) return (
@@ -170,7 +248,7 @@ const EventsPage = () => {
                 <p className="text-muted-foreground">{t('events.titre')}</p>
               </div>
             </div>
-            {isPresident && (
+            {canManageEvents && (
               <Button onClick={() => setShowForm(true)}>
                 <Plus className="w-5 h-5 mr-2" />
                 {t('events.nouveau')}
@@ -180,7 +258,7 @@ const EventsPage = () => {
         </Card>
 
         <Dialog open={showForm} onOpenChange={(open) => { if (!open) resetForm(); }}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingEvent ? t('events.modifier') : t('events.nouveau')}
@@ -188,6 +266,34 @@ const EventsPage = () => {
             </DialogHeader>
             <form onSubmit={handleSubmit}>
               <div className="space-y-4">
+                <div
+                  className="border-2 border-dashed rounded-xl p-4 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={handleDrop}
+                >
+                  {previewUrl ? (
+                    <div className="relative">
+                      <img src={previewUrl} alt="Preview" className="max-h-40 mx-auto rounded-lg object-cover" />
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="destructive"
+                        className="absolute top-1 right-1 h-6 w-6"
+                        onClick={(e) => { e.stopPropagation(); setPendingFile(null); setPreviewUrl(null); }}
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">{t('events.glisser_image')}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t('events.formats_image')}</p>
+                    </>
+                  )}
+                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                </div>
                 <div>
                   <Label>{t('events.titre_label')}</Label>
                   <Input
@@ -284,22 +390,31 @@ const EventsPage = () => {
             events.map((event) => {
               const TypeIcon = getTypeIconComponent(event.type);
               const isParticipant = event.participants?.some(p => p._id === user?._id);
+              const imageUrl = event.image && event.image !== 'default-event.jpg'
+                ? (String(event.image).startsWith('http') ? event.image : MEDIA_URL + "/" + String(event.image).replace(/^\/+/, ""))
+                : null;
               return (
                 <Card key={event._id} className="hover:shadow-md transition-shadow p-6 animate-in fade-in duration-300">
                   <div className="flex flex-wrap justify-between items-start gap-4">
                     <div className="flex gap-3 flex-1 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center text-primary-600 shrink-0 mt-0.5">
-                        <TypeIcon className="w-5 h-5" />
-                      </div>
+                      {imageUrl ? (
+                        <img src={imageUrl} alt={event.titre} className="w-14 h-14 rounded-xl object-cover shrink-0" />
+                      ) : (
+                        <div className="w-14 h-14 rounded-xl bg-primary-100 flex items-center justify-center text-primary-600 shrink-0">
+                          <TypeIcon className="w-7 h-7" />
+                        </div>
+                      )}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="text-lg font-semibold text-foreground">{event.titre}</h3>
-                          <Badge className={getStatusBadgeClass(event.status)}>
-                            {translateStatus(event.status)}
-                          </Badge>
+                          <StatusBadge status={event.status} module="event" />
                         </div>
                         <p className="text-muted-foreground mt-1.5">{event.description}</p>
                         <div className="flex flex-wrap gap-4 mt-2.5 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1.5 font-medium text-primary-600">
+                            <TypeIcon className="w-4 h-4" />
+                            {getTypeLabel(event.type)}
+                          </span>
                           <span className="flex items-center gap-1.5">
                             <Calendar className="w-4 h-4" />
                             {formatDate(event.date)}
@@ -321,18 +436,20 @@ const EventsPage = () => {
                           size="sm"
                           variant={isParticipant ? "destructive" : undefined}
                           className={isParticipant ? "" : "bg-emerald-600 text-white hover:bg-emerald-700"}
+                          disabled={processing}
                           onClick={() => handleParticipate(event._id)}
                         >
                           {isParticipant ? <X className="w-4 h-4 mr-1" /> : <CheckCircle className="w-4 h-4 mr-1" />}
                           {isParticipant ? t('events.se_desinscrire') : t('events.participer')}
                         </Button>
                       )}
-                      {isPresident && (
+                      {canManageEvents && (
                         <>
                           <Button
                             size="sm"
                             variant="outline"
                             className="bg-amber-500 text-white hover:bg-amber-600 border-amber-500"
+                            disabled={processing}
                             onClick={() => handleEdit(event)}
                           >
                             <Pencil className="w-4 h-4" />
@@ -340,11 +457,12 @@ const EventsPage = () => {
                           <Button
                             size="sm"
                             variant="destructive"
+                            disabled={processing}
                             onClick={() => handleDelete(event._id)}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
-                          <Select value={event.status} onValueChange={(val) => handleStatusChange(event._id, val)}>
+                          <Select disabled={processing} value={event.status} onValueChange={(val) => handleStatusChange(event._id, val)}>
                             <SelectTrigger className="w-32 h-9 text-sm">
                               <SelectValue />
                             </SelectTrigger>

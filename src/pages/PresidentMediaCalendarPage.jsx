@@ -35,11 +35,64 @@ const MEDIA_CONFIG = {
 
 const STATUS_OPTIONS = ["planifié", "en-cours", "terminé", "annulé"];
 
+const versInputLocal = (d) => {
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+};
+
+const maintenantLocal = () => versInputLocal(new Date());
+
+const plusUneMinute = (v) => {
+  if (!v) return "";
+  const [datePart, timePart] = String(v).split("T");
+  const [y, m, d] = datePart.split("-").map(Number);
+  const [hh, mm] = (timePart || "00:00").split(":").map(Number);
+  return versInputLocal(new Date(y, m - 1, d, hh, mm + 1));
+};
+
+const prochaineMinute = () => plusUneMinute(maintenantLocal());
+
+const maintenantMoinsTolerance = () => versInputLocal(new Date(Date.now() - 60000));
+
+const aLaMinute = (d) => Math.floor(new Date(d).getTime() / 60000);
+
+const depasseDansLePasse = (nouveau, ancien) => {
+  const n = new Date(nouveau);
+  if (Number.isNaN(n.getTime())) return false;
+  if (n.getTime() >= Date.now() - 60000) return false;
+  if (!ancien) return true;
+  return aLaMinute(n) !== aLaMinute(ancien);
+};
+
+const messageErreur = (err, t) => err.response?.data?.message || err.translatedMessage || t("common.erreur");
+
+const normaliserStart = (start, secours) => {
+  if (!start) return secours !== undefined ? secours : maintenantLocal();
+  if (typeof start === "string" && !start.includes("T")) {
+    const [y, m, j] = start.split("-").map(Number);
+    if (!y || !m || !j) return secours !== undefined ? secours : prochaineMinute();
+    return versInputLocal(new Date(y, m - 1, j));
+  }
+  const d = new Date(start);
+  if (Number.isNaN(d.getTime())) return secours !== undefined ? secours : prochaineMinute();
+  return versInputLocal(d);
+};
+
+const debutDepuisClic = (start) => {
+  const maintenant = new Date();
+  const jour = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const aujourdhui = new Date(maintenant.getFullYear(), maintenant.getMonth(), maintenant.getDate());
+  if (jour < aujourdhui) return null;
+  if (jour.getTime() === aujourdhui.getTime()) return prochaineMinute();
+  return versInputLocal(start);
+};
+
 export default function PresidentMediaCalendarPage() {
   const { t } = useI18n();
   const calendarRef = useRef(null);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [editId, setEditId] = useState(null);
@@ -47,6 +100,8 @@ export default function PresidentMediaCalendarPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [currentView, setCurrentView] = useState("dayGridMonth");
+  const [dateMin, setDateMin] = useState("");
+  const [dateInitiale, setDateInitiale] = useState("");
   const [form, setForm] = useState({
     title: "", description: "", mediaType: "facebook", startDate: "", endDate: "",
     color: MEDIA_CONFIG.facebook.color, lieu: "", status: "planifié"
@@ -65,9 +120,11 @@ export default function PresidentMediaCalendarPage() {
 
   const openCreate = (start) => {
     setEditId(null);
+    setDateMin(maintenantLocal());
+    setDateInitiale("");
     setSelectedEvent(null);
     setForm({
-      title: "", description: "", mediaType: "facebook", startDate: start || "", endDate: "",
+      title: "", description: "", mediaType: "facebook", startDate: normaliserStart(start), endDate: "",
       color: MEDIA_CONFIG.facebook.color, lieu: "", status: "planifié"
     });
     setShowDetail(false);
@@ -76,13 +133,15 @@ export default function PresidentMediaCalendarPage() {
 
   const openEdit = (event) => {
     setEditId(event._id);
+    setDateMin("");
+    setDateInitiale(normaliserStart(event.startDate, ""));
     setSelectedEvent(null);
     setForm({
       title: event.title || "",
       description: event.description || "",
       mediaType: event.mediaType || "facebook",
-      startDate: event.startDate ? new Date(event.startDate).toISOString().slice(0, 16) : "",
-      endDate: event.endDate ? new Date(event.endDate).toISOString().slice(0, 16) : "",
+      startDate: event.startDate ? normaliserStart(event.startDate, "") : "",
+      endDate: event.endDate ? normaliserStart(event.endDate, "") : "",
       color: event.color || MEDIA_CONFIG[event.mediaType]?.color || MEDIA_CONFIG.facebook.color,
       lieu: event.lieu || "",
       status: event.status || "planifié",
@@ -96,9 +155,14 @@ export default function PresidentMediaCalendarPage() {
     setShowDetail(true);
   };
 
+  const minStart = editId ? (form.startDate !== dateInitiale ? maintenantMoinsTolerance() : "") : (dateMin || "");
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.title || !form.startDate) { toast.error(t("calendar.toast_title_required")); return; }
+    if (form.startDate !== dateInitiale && form.startDate && form.startDate < maintenantMoinsTolerance()) { toast.error(t(editId ? "calendar.deplacement_passe_interdit" : "calendar.date_passee_interdite")); return; }
+    if (form.endDate && form.startDate && (editId ? form.endDate < form.startDate : form.endDate <= form.startDate)) { toast.error(t("calendar.date_fin_avant_debut")); return; }
+    setProcessing(true);
     try {
       if (editId) {
         await calendarAPI.updateMedia(editId, form);
@@ -110,43 +174,65 @@ export default function PresidentMediaCalendarPage() {
       setShowForm(false);
       fetchEvents();
     } catch { toast.error(t("common.erreur")); }
+    finally { setProcessing(false); }
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm(t("media.confirm_delete"))) return;
+    setProcessing(true);
     try {
       await calendarAPI.deleteMedia(id);
       toast.success(t("media.toast_deleted"));
       setShowDetail(false);
       fetchEvents();
     } catch { toast.error(t("common.erreur")); }
+    finally { setProcessing(false); }
   };
 
-  const handleDateSelect = (info) => openCreate(info.startStr);
+  const handleDateSelect = (info) => {
+    const debut = debutDepuisClic(info.start);
+    if (!debut) return;
+    openCreate(debut);
+  };
   const handleEventClick = (info) => openDetail(info.event.extendedProps._raw || info.event);
 
   const handleEventDrop = async (info) => {
+    const raw = info.event.extendedProps._raw;
+    if (depasseDansLePasse(info.event.start, raw.startDate)) {
+      info.revert();
+      toast.error(t("calendar.deplacement_passe_interdit"));
+      return;
+    }
     try {
-      const raw = info.event.extendedProps._raw;
       await calendarAPI.updateMedia(raw._id, {
         startDate: info.event.start?.toISOString(),
         endDate: info.event.end?.toISOString(),
       });
       toast.success(t("calendar.toast_date_updated"));
       fetchEvents();
-    } catch { toast.error(t("common.erreur")); }
+    } catch (err) { toast.error(messageErreur(err, t)); }
   };
 
   const handleEventResize = async (info) => {
+    const raw = info.event.extendedProps._raw;
+    if (depasseDansLePasse(info.event.start, raw.startDate)) {
+      info.revert();
+      toast.error(t("calendar.deplacement_passe_interdit"));
+      return;
+    }
+    if (info.event.start && info.event.end && new Date(info.event.end) <= new Date(info.event.start)) {
+      info.revert();
+      toast.error(t("calendar.date_fin_avant_debut"));
+      return;
+    }
     try {
-      const raw = info.event.extendedProps._raw;
       await calendarAPI.updateMedia(raw._id, {
         startDate: info.event.start?.toISOString(),
         endDate: info.event.end?.toISOString(),
       });
       toast.success(t("calendar.toast_duration_updated"));
       fetchEvents();
-    } catch { toast.error(t("common.erreur")); }
+    } catch (err) { toast.error(messageErreur(err, t)); }
   };
 
   const handleViewChange = (view) => {
@@ -286,7 +372,7 @@ export default function PresidentMediaCalendarPage() {
                 <Button size="sm" variant="outline" onClick={() => { setShowDetail(false); openEdit(selectedEvent); }}>
                   <Pencil className="w-4 h-4 mr-1" /> {t("common.modifier")}
                 </Button>
-                <Button size="sm" variant="destructive" onClick={() => handleDelete(selectedEvent._id)}>
+                <Button size="sm" variant="destructive" disabled={processing} onClick={() => handleDelete(selectedEvent._id)}>
                   <Trash2 className="w-4 h-4 mr-1" /> {t("common.supprimer")}
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => setShowDetail(false)} className="ml-auto">
@@ -326,8 +412,8 @@ export default function PresidentMediaCalendarPage() {
               <div><Label>{t("common.couleur")}</Label><Input type="color" value={form.color} onChange={(e) => setForm({...form, color: e.target.value})} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>{t("common.date_debut")} *</Label><Input type="datetime-local" value={form.startDate} onChange={(e) => setForm({...form, startDate: e.target.value})} required /></div>
-              <div><Label>{t("common.date_fin")}</Label><Input type="datetime-local" value={form.endDate} onChange={(e) => setForm({...form, endDate: e.target.value})} /></div>
+              <div><Label>{t("common.date_debut")} *</Label><Input type="datetime-local" value={form.startDate} min={minStart || undefined} onChange={(e) => setForm({...form, startDate: e.target.value})} required /></div>
+              <div><Label>{t("common.date_fin")}</Label><Input type="datetime-local" value={form.endDate} min={form.startDate ? plusUneMinute(form.startDate) : (minStart || undefined)} onChange={(e) => setForm({...form, endDate: e.target.value})} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{t("common.lieu")}</Label><Input value={form.lieu} onChange={(e) => setForm({...form, lieu: e.target.value})} placeholder={t("calendar.lieu_placeholder")} /></div>
@@ -341,8 +427,8 @@ export default function PresidentMediaCalendarPage() {
               </div>
             </div>
             <div className="flex gap-2 pt-2">
-              <Button type="submit">{editId ? t("common.modifier") : t("common.creer")}</Button>
-              {editId && <Button type="button" variant="destructive" onClick={() => handleDelete(editId)}><Trash2 className="w-4 h-4 mr-1" /> {t("common.supprimer")}</Button>}
+              <Button type="submit" disabled={processing}>{editId ? t("common.modifier") : t("common.creer")}</Button>
+              {editId && <Button type="button" variant="destructive" disabled={processing} onClick={() => handleDelete(editId)}><Trash2 className="w-4 h-4 mr-1" /> {t("common.supprimer")}</Button>}
               <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>{t("common.annuler")}</Button>
             </div>
           </form>

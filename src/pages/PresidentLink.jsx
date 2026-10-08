@@ -11,7 +11,6 @@ const PresidentLink = () => {
 
   useEffect(() => {
     const token = searchParams.get("token");
-    const tab = searchParams.get("tab") || "";
 
     if (!token) {
       navigate("/login", { replace: true });
@@ -21,8 +20,9 @@ const PresidentLink = () => {
     const processLink = async () => {
       try {
         await loginWithToken(token);
-        const target = `/president/validations${tab ? `?tab=${tab}` : ""}`;
-        navigate(target, { replace: true });
+        const membreId = searchParams.get("membreId");
+        // Ouvre directement la page Validation pour y planifier l'entretien
+        navigate(membreId ? `/president/validations?tab=membres&membreId=${membreId}` : "/president/validations?tab=membres", { replace: true });
       } catch {
         navigate("/login?expired=1", { replace: true });
       }

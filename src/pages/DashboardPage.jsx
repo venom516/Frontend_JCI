@@ -2,6 +2,7 @@
 import { useAuth } from "../contexts/AuthContext";
 import { useI18n } from "../contexts/I18nContext";
 import { dashboardAPI, taskAPI } from "../api/axios";
+import { useAutoRefresh } from "../hooks/useAutoRefresh";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,8 @@ import {
   Newspaper, Megaphone, Loader2, ListTodo, Eye
 } from "lucide-react";
 import toast from "react-hot-toast";
+import GlobalCalendar from "../components/dashboard/GlobalCalendar";
+import MemberStats from "../components/dashboard/MemberStats";
 
 const statCards = {
   president: [
@@ -46,18 +49,21 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        const res = await dashboardAPI.getMe();
-        setData(res.data.data);
-      } catch (err) {
-        console.error("Erreur chargement dashboard:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchDashboard();
   }, []);
+
+  useAutoRefresh(() => fetchDashboard(true));
+
+  const fetchDashboard = async (quiet = false) => {
+    try {
+      const res = await dashboardAPI.getMe();
+      setData(res.data.data);
+    } catch (err) {
+      console.error("Erreur chargement dashboard:", err);
+    } finally {
+      if (!quiet) setLoading(false);
+    }
+  };
 
   const role = isPresident ? "president" : isSecretaire ? "secretaire" : isMedia ? "media" : "membre";
   const stats = data?.stats || {};
@@ -100,8 +106,19 @@ export default function DashboardPage() {
         })}
       </div>
 
-      {/* Événements à venir / Tâches récentes */}
-      <div className="grid gap-6 md:grid-cols-2">
+      {/* Président : les 2 statistiques (répartition par sexe et par profession)
+          passent avant le calendrier global, qui est très haut */}
+      {isPresident ? (
+        <>
+          <MemberStats
+            repartitionSexe={data?.chartData?.repartitionSexe}
+            repartitionProfession={data?.chartData?.repartitionProfession}
+            totalActifs={stats.actifs || 0}
+          />
+          <GlobalCalendar />
+        </>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">{t("dashboard.evenements_a_venir")}</CardTitle>
@@ -166,7 +183,8 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { newsAPI } from "../api/axios";
 import toast from "react-hot-toast";
@@ -6,13 +6,16 @@ import { useI18n } from "../contexts/I18nContext";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
+import { StatusBadge } from "../components/common/StatusBadge";
+import { resolveImage } from "../utils/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import { Label } from "../components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Skeleton } from "../components/ui/skeleton";
-import { Plus, Ban, FileText, Check, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Plus, Ban, FileText, Check, Pencil, Trash2, Loader2, X, Upload } from "lucide-react";
+import { notifyNewsChanged } from "../utils/newsEvents";
 
 var NewsManagementPage = function () {
   var auth = useAuth();
@@ -42,6 +45,17 @@ var NewsManagementPage = function () {
   });
   var form = _formState[0];
   var setForm = _formState[1];
+  var _processingState = useState(false);
+  var processing = _processingState[0];
+  var setProcessing = _processingState[1];
+  var _pendingFileState = useState(null);
+  var pendingFile = _pendingFileState[0];
+  var setPendingFile = _pendingFileState[1];
+  var _previewUrlState = useState(null);
+  var [choix, setChoix] = useState("url");
+  var previewUrl = _previewUrlState[0];
+  var setPreviewUrl = _previewUrlState[1];
+  var fileInputRef = useRef(null);
 
   var canManage = isPresident || isMedia;
 
@@ -71,7 +85,30 @@ var NewsManagementPage = function () {
       status: "brouillon",
     });
     setEditingNews(null);
+    setPendingFile(null);
+    setPreviewUrl(null);
     setShowForm(false);
+  };
+
+  var handleFileChange = function (e) {
+    var file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+    setPendingFile(file);
+    if (file && file.type.startsWith("image/")) {
+      setPreviewUrl(URL.createObjectURL(file));
+    } else {
+      setPreviewUrl(null);
+    }
+  };
+
+  var handleDrop = function (e) {
+    e.preventDefault();
+    var file = e.dataTransfer.files && e.dataTransfer.files[0] ? e.dataTransfer.files[0] : null;
+    setPendingFile(file);
+    if (file && file.type.startsWith("image/")) {
+      setPreviewUrl(URL.createObjectURL(file));
+    } else {
+      setPreviewUrl(null);
+    }
   };
 
   var handleSubmit = async function (e) {
@@ -79,20 +116,42 @@ var NewsManagementPage = function () {
     setLoading(true);
 
     try {
-      if (editingNews) {
-        await newsAPI.update(editingNews._id, form);
-        toast.success(t("news.succes_modifier"));
-      } else {
+      var hasFile = pendingFile instanceof File;
+      var hasUrl = form.image && form.image.trim() !== "";
+      if (hasFile) {
+        var fd = new FormData();
+        Object.entries(form).forEach(function (entry) {
+          var k = entry[0];
+          var v = entry[1];
+          if (editingNews && k === "status") return;
+          if (v !== "" && v !== null && v !== undefined && k !== "image") fd.append(k, v);
+        });
+        fd.append("image", pendingFile);
+        if (editingNews) {
+          await newsAPI.update(editingNews._id, fd);
+        } else {
+          await newsAPI.create(fd);
+        }
+      } else if (editingNews) {
+      const formSansStatut2 = {};
+      Object.entries(form).forEach(function (entry) {
+        var k = entry[0]; var v = entry[1];
+        if (k === "status") return;
+        formSansStatut2[k] = v;
+      });
+      await newsAPI.update(editingNews._id, formSansStatut2);
+} else {
         await newsAPI.create(form);
-        toast.success(t("news.succes_creer"));
       }
+      toast.success(editingNews ? t("news.succes_modifier") : t("news.succes_creer"));
+      notifyNewsChanged();
       resetForm();
       fetchNews();
     } catch (error) {
       console.error("Erreur:", error);
       toast.error(
         (error.response && error.response.data && error.response.data.message) ||
-          t("common.erreur")
+        t("common.erreur")
       );
     } finally {
       setLoading(false);
@@ -101,13 +160,27 @@ var NewsManagementPage = function () {
 
   var handleEdit = function (item) {
     setEditingNews(item);
+    // Une image de remplacement (default-news.jpg) n'est pas une vraie URL :
+    // on la laisse vide pour ne pas l'envoyer comme source a retraiter.
+    const storedImage = item.image || "";
+    const isPlaceholder = !storedImage || /^default-(news|event)\.jpg$/i.test(storedImage);
     setForm({
       titre: item.titre || "",
       contenu: item.contenu || "",
       category: item.category || "General",
-      image: item.image || "",
+      image: isPlaceholder ? "" : storedImage,
       status: item.status || "brouillon",
     });
+    const img = isPlaceholder ? "" : storedImage;
+    if (img && img.startsWith("http")) {
+      setPreviewUrl(resolveImage ? resolveImage(img) : img);
+    } else if (img) {
+      const API_URL = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:5001";
+      setPreviewUrl(API_URL + img);
+    } else {
+      setPreviewUrl(null);
+    }
+    setPendingFile(null);
     setShowForm(true);
   };
 
@@ -116,6 +189,7 @@ var NewsManagementPage = function () {
     try {
       await newsAPI.delete(id);
       toast.success(t("news.succes_supprimer"));
+      notifyNewsChanged();
       fetchNews();
     } catch (error) {
       toast.error(t("common.erreur"));
@@ -123,12 +197,17 @@ var NewsManagementPage = function () {
   };
 
   var handlePublish = async function (id) {
+    if (processing) return;
+    setProcessing(true);
     try {
       await newsAPI.publish(id);
       toast.success(t("news.succes_publier"));
+      notifyNewsChanged();
       fetchNews();
     } catch (error) {
-      toast.error(t("common.erreur"));
+      toast.error(error.response?.data?.message || t("common.erreur"));
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -261,7 +340,54 @@ var NewsManagementPage = function () {
                 </div>
                 <div>
                   <Label>{t("news.image")}</Label>
-                  <Input
+                  <Select
+                    value={choix}
+                    onValueChange={function (val) {
+                      setChoix(val);
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem key={"url"} value={"url"}>
+                        URL
+                      </SelectItem>
+                      <SelectItem key={"image"} value={"image"}>
+                        Image
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {choix === "image" ? (
+                  <div
+                    className="border-2 border-dashed rounded-xl p-4 text-center cursor-pointer hover:border-primary/50 transition-colors mt-1.5"
+                    onClick={function () { fileInputRef.current && fileInputRef.current.click(); }}
+                    onDragOver={function (e) { e.preventDefault(); }}
+                    onDrop={handleDrop}
+                  >
+                    {previewUrl ? (
+                      <div className="relative">
+                        <img src={previewUrl} alt="Preview" className="max-h-40 mx-auto rounded-lg object-cover" />
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="destructive"
+                          className="absolute top-1 right-1 h-6 w-6"
+                          onClick={function (e) { e.stopPropagation(); setPendingFile(null); setPreviewUrl(null); }}
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                        <p className="text-sm text-muted-foreground">{t("news.glisser_image")}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{t("news.formats_image")}</p>
+                      </>
+                    )}
+                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                  </div>)
+                  :<Input
                     type="url"
                     value={form.image}
                     onChange={function (e) {
@@ -273,31 +399,13 @@ var NewsManagementPage = function () {
                         status: form.status,
                       });
                     }}
-                    placeholder={t("news.image_placeholder")}
-                  />
+                    placeholder={t("news.image_placeholder") || "https://..."}
+                    className="mt-2"
+                  />}
                 </div>
-                <div>
+<div>
                   <Label>{t("news.statut_label")}</Label>
-                  <Select
-                    value={form.status}
-                    onValueChange={function (val) {
-                      setForm({
-                        titre: form.titre,
-                        contenu: form.contenu,
-                        category: form.category,
-                        image: form.image,
-                        status: val,
-                      });
-                    }}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="publi\u00e9e">{t("news.publiee")}</SelectItem>
-                      <SelectItem value="brouillon">{t("news.brouillon")}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Input value={form.status} disabled readOnly className="mt-2 bg-muted/50" />
                 </div>
               </div>
               <DialogFooter>
@@ -368,30 +476,20 @@ var NewsManagementPage = function () {
                           </Badge>
                         </td>
                         <td className="px-4 py-3 text-sm">
-                          <Badge
-                            className={
-                              "text-xs " +
-                              (status === "publi\u00e9e"
-                                ? "bg-emerald-100 text-emerald-700 dark:text-emerald-300"
-                                : "bg-amber-100 text-amber-700 dark:text-amber-300")
-                            }
-                          >
-                            {status === "publi\u00e9e"
-                              ? t("news.publiee")
-                              : t("news.brouillon")}
-                          </Badge>
+                          <StatusBadge status={status} module="news" />
                         </td>
                         <td className="px-4 py-3 text-sm text-surface-500">
                           {formatDate(date)}
                         </td>
                         <td className="px-4 py-3 text-center">
                           <div className="flex justify-center gap-1.5">
-                            {status !== "publi\u00e9e" && (
+                            {status === "brouillon" && (
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 onClick={function () { handlePublish(id); }}
                                 title={t("news.publier")}
+                                disabled={processing}
                                 className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 w-8 p-0"
                               >
                                 <Check className="w-3.5 h-3.5" />

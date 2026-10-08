@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useI18n } from "../contexts/I18nContext";
 import { dashboardAPI } from "../api/axios";
+import { useAutoRefresh } from "../hooks/useAutoRefresh";
 import { Skeleton } from "../components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
@@ -15,19 +16,22 @@ const MediaDashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchData = async (quiet = false) => {
       try {
         const response = await dashboardAPI.getMedia();
         setData(response.data.data);
       } catch (error) {
         console.error("Erreur chargement dashboard:", error);
       } finally {
-        setLoading(false);
+        if (!quiet) setLoading(false);
       }
     };
+
+  useEffect(() => {
     fetchData();
   }, []);
+
+  useAutoRefresh(() => fetchData(true));
 
   if (loading) return <Skeleton className="h-96 w-full" />;
 

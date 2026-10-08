@@ -10,13 +10,15 @@ import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import Footer from "../components/layout/Footer";
+import { resolveImage, handleImageError } from "../utils/image";
+import { subscribeNewsChanged } from "../utils/newsEvents";
 import {
   Users, CalendarDays, Rocket, GraduationCap, CheckCircle, Eye,
   MapPin, Phone, Mail, Globe, ArrowRight, Calendar,
   Newspaper, AlertTriangle, Sparkles
 } from "lucide-react";
 
-const API_URL = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:5000";
+const API_URL = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:5001";
 
 const HeroBackground = () => (
   <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -107,29 +109,45 @@ const Home = () => {
     fetchNews();
   }, [fetchNews]);
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const calls = [
-          membreAPI.getPublicStats(),
-          eventAPI.getCount(),
-          eventAPI.getCount({ type: 'Action' }),
-          eventAPI.getCount({ type: 'Formation' }),
-        ];
-        const [membresRes, eventsRes, actionsRes, formationsRes] = await Promise.allSettled(calls);
-        const membres = membresRes.value?.data?.data?.actifs || 0;
-        const evenements = eventsRes.value?.data?.data?.count || 0;
-        const action = actionsRes.value?.data?.data?.count || 0;
-        const formations = formationsRes.value?.data?.data?.count || 0;
-        setStats({ membres, evenements, action, formations });
-      } catch (e) {
-        console.warn("Stats fetch failed", e);
-      } finally {
-        setStatsLoading(false);
-      }
-    };
-    fetchStats();
+  const fetchStats = useCallback(async () => {
+    try {
+      const calls = [
+        membreAPI.getPublicStats(),
+        eventAPI.getCount(),
+        eventAPI.getCount({ type: 'Action' }),
+        eventAPI.getCount({ type: 'Formation' }),
+      ];
+      const [membresRes, eventsRes, actionsRes, formationsRes] = await Promise.allSettled(calls);
+      const membres = membresRes.value?.data?.data?.actifs || 0;
+      const evenements = eventsRes.value?.data?.data?.count || 0;
+      const action = actionsRes.value?.data?.data?.count || 0;
+      const formations = formationsRes.value?.data?.data?.count || 0;
+      setStats({ membres, evenements, action, formations });
+    } catch (e) {
+      console.warn("Stats fetch failed", e);
+    } finally {
+      setStatsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  useEffect(() => {
+    const onNewsChanged = () => { fetchNews(); fetchStats(); };
+    const onFocus = () => { if (document.visibilityState === "visible") { fetchNews(); fetchStats(); } };
+    const offNewsChanged = subscribeNewsChanged(onNewsChanged);
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    const timer = setInterval(() => { if (document.visibilityState === "visible") fetchStats(); }, 30000);
+    return () => {
+      offNewsChanged();
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+      clearInterval(timer);
+    };
+  }, [fetchNews, fetchStats]);
 
   useEffect(() => {
     const fetchMembers = async () => {
@@ -156,6 +174,11 @@ const Home = () => {
       const date = item.date || item.createdAt || item.publishedAt || new Date();
       const image = item.image || item.photo || null;
       const id = item._id || item.id;
+      // Image dynamique uniquement : si l'actualite n'a pas de photo, la carte
+      // s'affiche sans image (aucune photo statique de remplacement).
+      const imageSrc = image
+        ? (image.startsWith("http") ? resolveImage(image) : API_URL + image)
+        : null;
 
       return (
         <Card key={id} className="group card-hover overflow-hidden">
@@ -178,9 +201,16 @@ const Home = () => {
             <h3 className="text-lg font-semibold text-foreground mb-2 line-clamp-2 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors duration-300">
               {title}
             </h3>
-            {image && (
-              <div className="mb-4 rounded-xl overflow-hidden">
-                <img src={image} alt={title} className="w-full h-48 object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+            {/* Photo uniquement si elle existe sur Cloudinary */}
+            {imageSrc && (
+              <div className="mb-4 rounded-xl overflow-hidden bg-muted" data-img-box>
+                <img
+                  src={imageSrc}
+                  alt={title}
+                  loading="lazy"
+                  className="w-full h-60 object-cover transition-transform duration-500 group-hover:scale-105"
+                  onError={handleImageError}
+                />
               </div>
             )}
             <div className="bg-muted/30 rounded-xl p-4 mb-4 border border-border">

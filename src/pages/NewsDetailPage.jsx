@@ -7,8 +7,11 @@ import { Skeleton } from "../components/ui/skeleton";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
+import { StatusBadge } from "../components/common/StatusBadge";
 import { Input } from "../components/ui/input";
 import { ArrowLeft, Clock, User, MessageCircle, Pencil, Trash2, Send, Loader2 } from "lucide-react";
+import { resolveImage, handleImageError } from "../utils/image";
+import { subscribeNewsChanged } from "../utils/newsEvents";
 import toast from "react-hot-toast";
 
 const NewsDetailPage = () => {
@@ -22,23 +25,29 @@ const NewsDetailPage = () => {
   const [commentContent, setCommentContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Rafraichissement automatique : une modification d'une actualite (texte,
+  // statut ou image importee / URL collee) est repercu sans rechargement.
   useEffect(() => {
     fetchNews();
+    const unsubscribe = subscribeNewsChanged(() => fetchNews({ silent: true }));
+    return unsubscribe;
   }, [id]);
 
-  const fetchNews = async () => {
-    setLoading(true);
+  const fetchNews = async ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
     try {
       const response = await newsAPI.getById(id);
       const data = response.data.data || response.data;
       setNews(data);
       setComments(data.comments || []);
     } catch (error) {
-      console.error("Erreur:", error);
-      toast.error(t('news.non_trouvee'));
-      navigate("/");
+      if (!silent) {
+        console.error("Erreur:", error);
+        toast.error(t('news.non_trouvee'));
+        navigate("/");
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -93,8 +102,9 @@ const NewsDetailPage = () => {
   const title = news.title || news.titre || t('common.sans_titre');
   const content = news.content || news.contenu || "";
   const category = news.category || "General";
-  const status = news.status || "published";
+  const status = news.status || "brouillon";
   const image = news.image || news.photo || null;
+  const imageSrc = image ? resolveImage(image) : null;
   const date = news.createdAt || news.date || news.publishedAt || new Date();
   const author = news.author || news.createdBy || null;
 
@@ -110,15 +120,13 @@ const NewsDetailPage = () => {
           </Link>
 
           <Card className="overflow-hidden shadow-soft-lg animate-fade-in-up">
-            {image && (
-              <div className="relative h-72 overflow-hidden">
+            {imageSrc && (
+              <div className="relative h-72 overflow-hidden" data-img-box>
                 <img 
-                  src={image} 
+                  src={imageSrc} 
                   alt={title} 
                   className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.src = 'https://via.placeholder.com/1200x400/4F46E5/FFFFFF?text=JCI+News';
-                  }}
+                  onError={handleImageError}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-surface-900/50 to-transparent"></div>
               </div>
@@ -127,11 +135,7 @@ const NewsDetailPage = () => {
             <div className="p-6 md:p-8">
               <div className="flex flex-wrap items-center gap-3 mb-4">
                 <Badge variant="default" className="text-xs">{category}</Badge>
-                <Badge variant={
-                  status === 'published' ? 'default' : 'secondary'
-                } className="text-xs">
-                  {status === 'published' ? t('news.publie') : t('news.brouillon')}
-                </Badge>
+                <StatusBadge status={status} module="news" />
                 <span className="text-muted-foreground text-sm flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5" />
                   {formatDateTime(date)}
@@ -206,7 +210,7 @@ const NewsDetailPage = () => {
                 </form>
 
                 {comments.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-6">{t('news.aucune')}</p>
+                  <p className="text-muted-foreground text-center py-6">{t('news.aucun_commentaire')}</p>
                 ) : (
                   <div className="space-y-3">
                     {comments.map((comment, index) => (

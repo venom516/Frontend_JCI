@@ -22,10 +22,9 @@ export const navItems = [
 ];
 
 export const managementItems = [
-  { title: "Membres", href: "/members", icon: Users, roles: ["Admin", "President", "SecretaireGeneral", "ConseillerMedia"] },
+  { title: "Membres", href: "/members", icon: Users, roles: ["President"] },
   { title: "Tâches", href: "/tasks", icon: ListTodo, roles: null },
-  { title: "Événements", href: "/events", icon: Calendar, roles: null },
-  { title: "Entretiens", href: "/entretiens", icon: MessagesSquare, roles: null },
+  { title: "Événements", href: "/events", icon: Calendar, roles: ["Membre"] },
   { title: "Actualités", href: "/news", icon: Newspaper, roles: ["ConseillerMedia", "President"] },
   { title: "Publications", href: "/publications", icon: Megaphone, roles: ["ConseillerMedia", "President"] },
   { title: "Documents", href: "/documents", icon: FileText, roles: ["SecretaireGeneral", "President"] },

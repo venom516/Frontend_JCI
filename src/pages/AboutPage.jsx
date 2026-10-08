@@ -4,7 +4,7 @@ import { useSiteConfig } from "../contexts/SiteConfigContext";
 import jci from "../config/jci";
 import { Card } from "../components/ui/card";
 import { Mail, Phone, MapPin, Sparkles, Eye } from "lucide-react";
-const API_URL = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:5000";
+const API_URL = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:5001";
 
 const IconFacebook = ({ className }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 24 24">

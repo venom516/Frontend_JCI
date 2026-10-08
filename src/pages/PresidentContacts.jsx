@@ -13,6 +13,7 @@ const PresidentContacts = () => {
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
+  const [processing, setProcessing] = useState(false);
 
   useEffect(() => { fetchContacts(); }, []);
 
@@ -25,21 +26,25 @@ const PresidentContacts = () => {
   };
 
   const handleMarkRead = async (id) => {
+    setProcessing(true);
     try {
       await contactAPI.markAsRead(id);
       setContacts(contacts.map(c => c._id === id ? { ...c, lu: true } : c));
       toast.success(t('president.marque_lu'));
     } catch { toast.error(t('common.erreur')); }
+    finally { setProcessing(false); }
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm(t('president.supprimer_message'))) return;
+    setProcessing(true);
     try {
       await contactAPI.delete(id);
       setContacts(contacts.filter(c => c._id !== id));
       if (selected === id) setSelected(null);
       toast.success(t('president.message_supprime'));
     } catch { toast.error(t('common.erreur')); }
+    finally { setProcessing(false); }
   };
 
   if (loading) return <Skeleton className="h-96 w-full" />;
@@ -81,11 +86,11 @@ const PresidentContacts = () => {
                 </div>
                 <div className="flex gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                   {!c.lu && (
-                    <Button size="sm" variant="ghost" onClick={() => handleMarkRead(c._id)} title={t('president.marquer_lu')}>
+                    <Button size="sm" variant="ghost" disabled={processing} onClick={() => handleMarkRead(c._id)} title={t('president.marquer_lu')}>
                       <CheckCircle className="w-4 h-4 text-primary-600" />
                     </Button>
                   )}
-                  <Button size="sm" variant="ghost" onClick={() => handleDelete(c._id)} title={t('common.supprimer')}>
+                  <Button size="sm" variant="ghost" disabled={processing} onClick={() => handleDelete(c._id)} title={t('common.supprimer')}>
                     <Trash2 className="w-4 h-4 text-rose-500" />
                   </Button>
                 </div>
@@ -94,8 +99,8 @@ const PresidentContacts = () => {
                 <div className="mt-4 pt-4 border-t border-surface-200">
                   <p className="text-surface-700 whitespace-pre-wrap">{c.message}</p>
                   <div className="flex gap-2 mt-4">
-                    {!c.lu && <Button size="sm" onClick={() => handleMarkRead(c._id)}>{t('president.marquer_lu')}</Button>}
-                    <Button size="sm" variant="destructive" onClick={() => handleDelete(c._id)}>{t('common.supprimer')}</Button>
+                    {!c.lu && <Button size="sm" disabled={processing} onClick={() => handleMarkRead(c._id)}>{t('president.marquer_lu')}</Button>}
+                    <Button size="sm" variant="destructive" disabled={processing} onClick={() => handleDelete(c._id)}>{t('common.supprimer')}</Button>
                   </div>
                 </div>
               )}

@@ -1,13 +1,15 @@
 import { NavLink } from "react-router-dom";
 
-const SidebarItem = ({ item, onClick }) => {
+const SidebarItem = ({ item, onClick, small = false }) => {
   const Icon = item.icon;
   return (
     <NavLink
       to={item.href}
       onClick={onClick}
       className={({ isActive }) =>
-        `flex items-center gap-3 text-sm font-medium rounded-lg px-3 py-2.5 transition-all duration-200 ${
+        `flex items-center gap-3 font-medium rounded-lg px-3 transition-all duration-200 ${
+          small ? "text-sm py-2" : "text-sm py-2.5"
+        } ${
           isActive
             ? "bg-primary text-primary-foreground shadow-sm"
             : "text-surface-700 hover:bg-surface-100 hover:text-surface-900"

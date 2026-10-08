@@ -17,6 +17,7 @@ const errorMap = {
   'Erreur de vérification':                        { fr: 'Erreur de vérification',                        ar: 'خطأ في التحقق', en: 'Verification error' },
   'Accès non autorisé':                            { fr: 'Accès non autorisé',                            ar: 'وصول غير مصرح به', en: 'Unauthorized access' },
   'Accès non autorisé. Token manquant.':           { fr: 'Accès non autorisé. Token manquant.',           ar: 'وصول غير مصرح به. الرمز مفقود.', en: 'Unauthorized access. Missing token.' },
+  'Session expirée':                                 { fr: 'Session expirée',                                 ar: 'انتهت الجلسة', en: 'Session expired' },
   'Veuillez fournir un email valide':              { fr: 'Veuillez fournir un email valide',              ar: 'يرجى تقديم بريد إلكتروني صالح', en: 'Please provide a valid email' },
   'Cet email est déjà utilisé':                    { fr: 'Cet email est déjà utilisé',                    ar: 'هذا البريد الإلكتروني مستخدم بالفعل', en: 'This email is already used' },
   'Les mots de passe ne correspondent pas':        { fr: 'Les mots de passe ne correspondent pas',        ar: 'كلمات المرور غير متطابقة', en: 'Passwords do not match' },
@@ -60,6 +61,24 @@ const errorMap = {
   'Route non trouvée':                              { fr: 'Route non trouvée',                              ar: 'المسار غير موجود', en: 'Route not found' },
   'Ce rôle est déjà attribué à un autre membre. Veuillez d\'abord le retirer avant de l\'attribuer à une nouvelle personne.':
     { fr: 'Ce rôle est déjà attribué à un autre membre.', ar: 'هذا الدور مُسند لعضو آخر بالفعل.', en: 'This role is already assigned to another member.' },
+  'Le mandat de VPFD est expiré. Un autre membre occupe déjà ce poste.':
+    { fr: 'Le mandat VPFD est expiré et déjà attribué.', ar: 'انتهت ولاية VPFD وتم تعيين عضو آخر.', en: 'The VPFD mandate has expired and is already assigned.' },
+  'Le mandat de VPPRE est expiré. Un autre membre occupe déjà ce poste.':
+    { fr: 'Le mandat VPPRE est expiré et déjà attribué.', ar: 'انتهت ولاية VPPRE وتم تعيين عضو آخر.', en: 'The VPPRE mandate has expired and is already assigned.' },
+  'Le mandat de Tresorie est expiré. Un autre membre occupe déjà ce poste.':
+    { fr: 'Le mandat Trésorerie est expiré et déjà attribué.', ar: 'انتهت ولاية الخزينة وتم تعيين عضو آخر.', en: 'The Treasurer mandate has expired and is already assigned.' },
+  'Connexion au serveur impossible. Vérifiez votre connexion internet.':
+    { fr: 'Connexion au serveur impossible. Vérifiez votre connexion internet.', ar: 'تعذر الاتصال بالخادم. تحقق من اتصالك بالإنترنت.', en: 'Unable to connect to server. Check your internet connection.' },
+  'Veuillez fournir email et mot de passe':
+    { fr: 'Veuillez fournir votre email et mot de passe.', ar: 'يرجى تقديم بريدك الإلكتروني وكلمة المرور.', en: 'Please provide your email and password.' },
+  'Tous les champs obligatoires doivent être remplis':
+    { fr: 'Veuillez remplir tous les champs obligatoires.', ar: 'يرجى ملء جميع الحقول الإلزامية.', en: 'Please fill in all required fields.' },
+  'Inscription réussie ! Veuillez vérifier votre email.':
+    { fr: 'Inscription réussie ! Veuillez vérifier votre email.', ar: 'تم التسجيل بنجاح! يرجى التحقق من بريدك الإلكتروني.', en: 'Registration successful! Please check your email.' },
+  'Connexion réussie':
+    { fr: 'Connexion réussie', ar: 'تم تسجيل الدخول بنجاح', en: 'Login successful' },
+  'Email vérifié avec succès':
+    { fr: 'Email vérifié avec succès', ar: 'تم التحقق من البريد الإلكتروني بنجاح', en: 'Email verified successfully' },
 };
 
 export const getLang = () => localStorage.getItem('jci_lang') || 'fr';
