@@ -21,7 +21,7 @@ const PresidentContacts = () => {
     try {
       const res = await contactAPI.getAll();
       setContacts(res.data.data || []);
-    } catch (error) { toast.error(error.response?.data?.message || error.translatedMessage || t('president.erreur_chargement_messages')); }
+    } catch { toast.error(t('president.erreur_chargement_messages')); }
     finally { setLoading(false); }
   };
 
@@ -31,15 +31,8 @@ const PresidentContacts = () => {
       await contactAPI.markAsRead(id);
       setContacts(contacts.map(c => c._id === id ? { ...c, lu: true } : c));
       toast.success(t('president.marque_lu'));
-<<<<<<< HEAD
     } catch { toast.error(t('common.erreur')); }
     finally { setProcessing(false); }
-<<<<<<< HEAD
-=======
-=======
-    } catch (error) { toast.error(error.response?.data?.message || error.translatedMessage || t('common.erreur')); }
->>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
->>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
   };
 
   const handleDelete = async (id) => {
@@ -50,15 +43,8 @@ const PresidentContacts = () => {
       setContacts(contacts.filter(c => c._id !== id));
       if (selected === id) setSelected(null);
       toast.success(t('president.message_supprime'));
-<<<<<<< HEAD
     } catch { toast.error(t('common.erreur')); }
     finally { setProcessing(false); }
-<<<<<<< HEAD
-=======
-=======
-    } catch (error) { toast.error(error.response?.data?.message || error.translatedMessage || t('common.erreur')); }
->>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
->>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
   };
 
   if (loading) return <Skeleton className="h-96 w-full" />;

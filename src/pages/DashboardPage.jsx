@@ -49,23 +49,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-=======
-    const fetchDashboard = async () => {
-      try {
-        const res = await dashboardAPI.getMe();
-        setData(res.data.data);
-      } catch (err) {
-        toast.error(err.response?.data?.message || err.translatedMessage || t("common.erreur"));
-        console.error("Erreur chargement dashboard:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
->>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
->>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
     fetchDashboard();
   }, []);
 

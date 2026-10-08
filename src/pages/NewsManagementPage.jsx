@@ -45,10 +45,6 @@ var NewsManagementPage = function () {
   });
   var form = _formState[0];
   var setForm = _formState[1];
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
   var _processingState = useState(false);
   var processing = _processingState[0];
   var setProcessing = _processingState[1];
@@ -60,37 +56,21 @@ var NewsManagementPage = function () {
   var previewUrl = _previewUrlState[0];
   var setPreviewUrl = _previewUrlState[1];
   var fileInputRef = useRef(null);
-<<<<<<< HEAD
-=======
-=======
-  // Le serveur plafonne a 20 par page et renvoie page/totalPages : sans etat
-  // local, tout ce qui est au-dela de la premiere page reste inatteignable.
-  var _pageState = useState(1);
-  var page = _pageState[0];
-  var setPage = _pageState[1];
-  var _totalPagesState = useState(1);
-  var totalPages = _totalPagesState[0];
-  var setTotalPages = _totalPagesState[1];
->>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
->>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
 
   var canManage = isPresident || isMedia;
 
   useEffect(function () {
-    fetchNews(1);
+    fetchNews();
   }, []);
 
-  var fetchNews = async function (pageNumber) {
-    var courante = pageNumber || 1;
+  var fetchNews = async function () {
     setLoading(true);
     try {
-      var response = await newsAPI.getAll({ page: courante, limit: 20 });
+      var response = await newsAPI.getAll();
       setNews((response.data && response.data.data) || []);
-      setTotalPages((response.data && response.data.totalPages) || 1);
-      setPage((response.data && response.data.page) || courante);
     } catch (error) {
       console.error(t("common.erreur"), error);
-      toast.error(error.response?.data?.message || error.translatedMessage || t("home.erreur_chargement"));
+      toast.error(t("home.erreur_chargement"));
     } finally {
       setLoading(false);
     }
@@ -166,7 +146,7 @@ var NewsManagementPage = function () {
       toast.success(editingNews ? t("news.succes_modifier") : t("news.succes_creer"));
       notifyNewsChanged();
       resetForm();
-      fetchNews(page);
+      fetchNews();
     } catch (error) {
       console.error("Erreur:", error);
       toast.error(
@@ -209,17 +189,10 @@ var NewsManagementPage = function () {
     try {
       await newsAPI.delete(id);
       toast.success(t("news.succes_supprimer"));
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
       notifyNewsChanged();
       fetchNews();
-=======
-      fetchNews(page);
->>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
     } catch (error) {
-      toast.error(error.response?.data?.message || error.translatedMessage || t("common.erreur"));
+      toast.error(t("common.erreur"));
     }
   };
 
@@ -229,24 +202,12 @@ var NewsManagementPage = function () {
     try {
       await newsAPI.publish(id);
       toast.success(t("news.succes_publier"));
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
       notifyNewsChanged();
       fetchNews();
     } catch (error) {
       toast.error(error.response?.data?.message || t("common.erreur"));
     } finally {
       setProcessing(false);
-<<<<<<< HEAD
-=======
-=======
-      fetchNews(page);
-    } catch (error) {
-      toast.error(error.response?.data?.message || error.translatedMessage || t("common.erreur"));
->>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
->>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
     }
   };
 
@@ -562,34 +523,6 @@ var NewsManagementPage = function () {
             </table>
           </div>
         </Card>
-
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between pt-4">
-            <span className="text-sm text-surface-500">
-              {page} / {totalPages}
-            </span>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={page <= 1}
-                onClick={function () { fetchNews(page - 1); }}
-              >
-                {t("common.precedent")}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={function () { fetchNews(page + 1); }}
-              >
-                {t("common.suivant")}
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

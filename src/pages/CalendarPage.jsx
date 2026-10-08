@@ -34,7 +34,7 @@ const CalendarPage = () => {
       setEvents(eventsRes.data.data || []);
       setTasks(tasksRes.data.data || []);
     } catch (error) {
-      toast.error(error.response?.data?.message || error.translatedMessage || t('events.erreur_chargement'));
+      toast.error(t('events.erreur_chargement'));
     } finally {
       setLoading(false);
     }

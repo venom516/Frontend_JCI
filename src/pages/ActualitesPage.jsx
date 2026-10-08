@@ -24,7 +24,7 @@ const ActualitesPage = () => {
       const data = response.data?.data || response.data || [];
       setNews(Array.isArray(data) ? data : []);
     } catch (err) {
-      toast.error(err.response?.data?.message || err.translatedMessage || err.message || t("home.erreur_chargement"));
+      toast.error(err.message || t("home.erreur_chargement"));
       setError(err.message);
     } finally {
       setLoading(false);

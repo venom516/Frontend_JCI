@@ -40,7 +40,7 @@ const EventsPage = () => {
     description: "",
     date: "",
     lieu: "",
-    maxParticipants: "",
+    maxParticipants: 0,
     ordreDuJour: "",
   });
 
@@ -56,10 +56,6 @@ const EventsPage = () => {
       setEvents(response.data.data || []);
       return true;
     } catch (error) {
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
       // Sans cela, un timeout, un 401 et une coupure réseau affichent tous
       // le même "Erreur de chargement", ce qui masque la cause réelle.
       console.error("[EventsPage] chargement des evenements :", error);
@@ -69,12 +65,6 @@ const EventsPage = () => {
       // bien saved, seul l'affichage de la liste a échoué.
       toast.error(silencieux ? `${t('events.enregistre_mais_liste')} ${message}` : message);
       return false;
-<<<<<<< HEAD
-=======
-=======
-      toast.error(error.response?.data?.message || error.translatedMessage || t('events.erreur_chargement'));
->>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
->>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
     } finally {
       if (!silencieux) setLoading(false);
     }
@@ -121,10 +111,6 @@ const EventsPage = () => {
     e.preventDefault();
     setLoading(true);
     try {
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
       const hasFile = pendingFile instanceof File;
       if (hasFile) {
         const fd = new FormData();
@@ -135,35 +121,12 @@ const EventsPage = () => {
         } else {
           await eventAPI.create(fd);
         }
-<<<<<<< HEAD
       } else {
         if (editingEvent) {
           await eventAPI.update(editingEvent._id, form);
         } else {
           await eventAPI.create(form);
         }
-=======
-      } else {
-        if (editingEvent) {
-          await eventAPI.update(editingEvent._id, form);
-        } else {
-          await eventAPI.create(form);
-        }
-=======
-      // Le modele backend attend un Number (default 0) : "" serait casté en
-      // null et stocké. On normalise avant l'envoi.
-      const payload = {
-        ...form,
-        maxParticipants: form.maxParticipants === "" ? 0 : Number(form.maxParticipants),
-      };
-      if (editingEvent) {
-        await eventAPI.update(editingEvent._id, payload);
-        toast.success(t('events.succes_modification'));
-      } else {
-        await eventAPI.create(payload);
-        toast.success(t('events.succes_creation'));
->>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
->>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
       }
       toast.success(editingEvent ? t('events.succes_modification') : t('events.succes_creation'));
       resetForm();
@@ -188,7 +151,7 @@ const EventsPage = () => {
     setForm({
       titre: event.titre,
       type: event.type,
-      description: event.description || "",
+      description: event.description,
       date: event.date.split("T")[0],
       lieu: event.lieu,
       maxParticipants: event.maxParticipants || "",
@@ -207,16 +170,9 @@ const EventsPage = () => {
       toast.success(t('events.succes_suppression'));
       fetchEvents();
     } catch (error) {
-<<<<<<< HEAD
       toast.error(t('events.erreur_chargement'));
     } finally {
       setProcessing(false);
-<<<<<<< HEAD
-=======
-=======
-      toast.error(error.response?.data?.message || error.translatedMessage || t('events.erreur_chargement'));
->>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
->>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
     }
   };
 
@@ -227,16 +183,9 @@ const EventsPage = () => {
       toast.success(response.data.message);
       fetchEvents();
     } catch (error) {
-<<<<<<< HEAD
       toast.error(t('events.erreur_chargement'));
     } finally {
       setProcessing(false);
-<<<<<<< HEAD
-=======
-=======
-      toast.error(error.response?.data?.message || error.translatedMessage || t('events.erreur_chargement'));
->>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
->>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
     }
   };
 
@@ -247,16 +196,9 @@ const EventsPage = () => {
       toast.success(t('events.succes_statut'));
       fetchEvents();
     } catch (error) {
-<<<<<<< HEAD
       toast.error(t('events.erreur_chargement'));
     } finally {
       setProcessing(false);
-<<<<<<< HEAD
-=======
-=======
-      toast.error(error.response?.data?.message || error.translatedMessage || t('events.erreur_chargement'));
->>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
->>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
     }
   };
 
@@ -265,15 +207,7 @@ const EventsPage = () => {
       Action: Zap,
       Formation: BookOpen,
       Manifestation: Megaphone,
-<<<<<<< HEAD
       "Réunion": Users,
-=======
-<<<<<<< HEAD
-      "Réunion": Users,
-=======
-      Réunion: Users,
->>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
->>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
       AGP: Building,
     };
     return icons[type] || List;
@@ -497,7 +431,7 @@ const EventsPage = () => {
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2 shrink-0">
-                      {event.status !== "terminée" && event.status !== "annulée" && (
+                      {event.status !== "terminee" && event.status !== "annulee" && (
                         <Button
                           size="sm"
                           variant={isParticipant ? "destructive" : undefined}

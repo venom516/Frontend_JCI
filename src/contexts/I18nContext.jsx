@@ -9,7 +9,6 @@ const translations = {
     "nav.dashboard": "Tableau de bord",
     "nav.profil": "Profil",
     "nav.calendrier": "Calendrier",
-    "nav.calendrier_membre": "Calendrier membre",
     "nav.calendrier_media": "Calendrier média",
     "nav.taches": "Tâches",
     "nav.taches_normale": "Tâches normales",
@@ -200,8 +199,6 @@ const translations = {
     "common.aucun": "Aucun",
     "common.total": "Total",
     "common.statut": "Statut",
-    "common.precedent": "Précédent",
-    "common.suivant": "Suivant",
     "common.supprime": "Supprimé",
     "common.reinitialiser": "Réinitialiser",
     "common.voir": "Voir",
@@ -416,8 +413,6 @@ const translations = {
     "tasks.description": "Description",
     "tasks.deadline": "Date limite",
     "tasks.assigner": "Assigner à",
-    "tasks.assigner_a": "Assigné à",
-    "tasks.assigner_par": "Assigné par",
     "tasks.type": "Type",
     "tasks.priorite": "Priorité",
     "tasks.statut": "Statut",
@@ -503,8 +498,6 @@ const translations = {
     "members.membre_count": "membres",
     "members.actif": "Actif",
     "members.non_valide": "Non valide",
-    "members.non_inscrit": "Non inscrit",
-    "members.inactif": "Inactif",
     "members.suspendu": "Suspendu",
     "members.banni": "Banni",
     "members.refuse": "Refusé",
@@ -1026,7 +1019,6 @@ const translations = {
     "home.en_savoir_plus": "En savoir plus",
     "home.cta_titre": "Prêt à rejoindre JCI Sidi Mansour ?",
     "home.cta_texte": "Rejoignez une communauté de jeunes leaders engagés pour un impact positif dans leur communauté.",
-    "home.rejoignez_nous": "Rejoignez-nous",
     "home.inscrire_maintenant": "S'inscrire maintenant",
     "home.acceder_tableau_bord": "Accéder à mon tableau de bord",
     "home.erreur_chargement": "Erreur de chargement",
@@ -1214,7 +1206,6 @@ const translations = {
     "nav.dashboard": "لوحة القيادة",
     "nav.profil": "الملف الشخصي",
     "nav.calendrier": "التقويم",
-    "nav.calendrier_membre": "تقويم العضو",
     "nav.calendrier_media": "تقويم الإعلام",
     "nav.taches": "المهام",
     "nav.taches_normale": "المهام العادية",
@@ -1374,8 +1365,6 @@ const translations = {
     "common.aucun": "لا يوجد",
     "common.total": "المجموع",
     "common.statut": "الحالة",
-    "common.precedent": "السابق",
-    "common.suivant": "التالي",
     "common.supprime": "محذوف",
     "common.reinitialiser": "إعادة تعيين",
     "common.voir": "عرض",
@@ -1590,8 +1579,6 @@ const translations = {
     "tasks.description": "الوصف",
     "tasks.deadline": "تاريخ التسليم",
     "tasks.assigner": "تعيين إلى",
-    "tasks.assigner_a": "معين إلى",
-    "tasks.assigner_par": "معين من قبل",
     "tasks.type": "النوع",
     "tasks.priorite": "الأولوية",
     "tasks.statut": "الحالة",
@@ -1677,8 +1664,6 @@ const translations = {
     "members.membre_count": "أعضاء",
     "members.actif": "نشط",
     "members.non_valide": "غير صالح",
-    "members.non_inscrit": "غير مسجّل",
-    "members.inactif": "غير نشط",
     "members.suspendu": "موقوف",
     "members.banni": "ممنوع",
     "members.refuse": "مرفوض",
@@ -2418,7 +2403,6 @@ const translations = {
     "nav.dashboard": "Dashboard",
     "nav.profil": "Profile",
     "nav.calendrier": "Calendar",
-    "nav.calendrier_membre": "Member calendar",
     "nav.calendrier_media": "Media calendar",
     "nav.taches": "Tasks",
     "nav.taches_normale": "Normal tasks",
@@ -2610,8 +2594,6 @@ const translations = {
     "common.aucun": "None",
     "common.total": "Total",
     "common.statut": "Status",
-    "common.precedent": "Previous",
-    "common.suivant": "Next",
     "common.supprime": "Deleted",
     "common.reinitialiser": "Reset",
     "common.voir": "View",
@@ -2829,8 +2811,6 @@ const translations = {
     "tasks.description": "Description",
     "tasks.deadline": "Deadline",
     "tasks.assigner": "Assign to",
-    "tasks.assigner_a": "Assigned to",
-    "tasks.assigner_par": "Assigned by",
     "tasks.type": "Type",
     "tasks.priorite": "Priority",
     "tasks.statut": "Status",
@@ -2921,8 +2901,6 @@ const translations = {
     "members.membre_count": "members",
     "members.actif": "Active",
     "members.non_valide": "Unverified",
-    "members.non_inscrit": "Not registered",
-    "members.inactif": "Inactive",
     "members.suspendu": "Suspended",
     "members.banni": "Banned",
     "members.refuse": "Refused",
@@ -3702,29 +3680,15 @@ export const I18nProvider = ({ children }) => {
   };
 
   const translateMemberStatus = (status) => {
-    // Cles = enum exact de Membre.status cote backend (accents et tirets compris).
-    // "en_attente" et "non-valide" n'existaient pas dans le modele : la cle
-    // ratée retombait sur le retour par defaut et affichait le code brut.
     const map = {
-      'non-inscrit': t('members.non_inscrit'),
+      'actif': t('members.actif'),
+      'en_attente': t('members.en_attente'),
       'en-attente': t('members.en_attente'),
-<<<<<<< HEAD
       'non-valide': t('members.non_valide'),
       'non-inscrit': t('members.non_valide'),
       'suspendu': t('members.suspendu'),
       'banni': t('members.banni'),
       'refusé': t('members.refuse')
-<<<<<<< HEAD
-=======
-=======
-      'actif': t('members.actif'),
-      'suspendu': t('members.suspendu'),
-      'banni': t('members.banni'),
-      'refusé': t('members.refuse'),
-      'inactif': t('members.inactif'),
-      'non-validé': t('members.non_valide')
->>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
->>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
     };
     if (status === 'archivé' || status === 'archive') return t('members.archive');
     return map[status] || status;
@@ -3747,11 +3711,8 @@ export const I18nProvider = ({ children }) => {
   };
 
   const translateSituation = (situation) => {
-    // Les pages enregistrent "Etudiant" et "Etudiant" avec accent : les deux
-    // graphies circulent en base, les deux doivent resolver au meme libelle.
     const map = {
       'Etudiant': t('members.etudiant'),
-      'Étudiant': t('members.etudiant'),
       'Professionnel': t('members.professionnel'),
       'Autre': t('members.autre')
     };

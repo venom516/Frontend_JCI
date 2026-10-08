@@ -17,7 +17,6 @@ import {
   MapPin, Phone, Mail, Globe, ArrowRight, Calendar,
   Newspaper, AlertTriangle, Sparkles
 } from "lucide-react";
-import toast from "react-hot-toast";
 
 const API_URL = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:5001";
 
@@ -110,10 +109,6 @@ const Home = () => {
     fetchNews();
   }, [fetchNews]);
 
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
   const fetchStats = useCallback(async () => {
     try {
       const calls = [
@@ -133,34 +128,6 @@ const Home = () => {
     } finally {
       setStatsLoading(false);
     }
-<<<<<<< HEAD
-=======
-=======
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const calls = [
-          membreAPI.getPublicStats(),
-          eventAPI.getCount(),
-          eventAPI.getCount({ type: 'Action' }),
-          eventAPI.getCount({ type: 'Formation' }),
-        ];
-        const [membresRes, eventsRes, actionsRes, formationsRes] = await Promise.allSettled(calls);
-        const membres = membresRes.value?.data?.data?.actifs || 0;
-        const evenements = eventsRes.value?.data?.data?.count || 0;
-        const action = actionsRes.value?.data?.data?.count || 0;
-        const formations = formationsRes.value?.data?.data?.count || 0;
-        setStats({ membres, evenements, action, formations });
-      } catch (e) {
-        toast.error(e.response?.data?.message || e.translatedMessage || t('common.erreur'));
-        console.warn("Stats fetch failed", e);
-      } finally {
-        setStatsLoading(false);
-      }
-    };
-    fetchStats();
->>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
->>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
   }, []);
 
   useEffect(() => {
@@ -324,13 +291,13 @@ const Home = () => {
                 }}
               >
                 <div className="relative z-10 pt-6 md:pt-10 pb-2 md:pb-4">
-                  <div className="animate-fade-in-up w-full max-w-5xl mx-auto text-center flex flex-col space-y-[5vh] px-4 mt-[200px] sm:mt-[200px] lg:mt-[150px] md:mt-[150px]">
+                  <div className="animate-fade-in-up w-full max-w-5xl mx-auto text-center flex flex-col space-y-[5vh] px-4 md:mt-[150px]" style={{ marginTop: 100 }}>
                     {!logoError ? (
                       <center>
                         <img
                           src="/images/logo-jci-white.png"
                           alt="JCI"
-                          className="h-30 sm:h-30 md:h-[26rem] lg:h-[25.8rem] lg:w-[25.8rem] mb-[-100px] sm:mb-[-100px] md:mb-[-130px] lg:mb-[-130px]"
+                          className="h-30 sm:h-30 md:h-[26rem] lg:h-[30.8rem] lg:w-[30.8rem] mb-[-110px] sm:mb-[-130px] md:mb-[-130px] lg:mb-[-150px]"
                           loading="lazy"
                           onError={() => setLogoError(true)}
                         />
@@ -354,14 +321,6 @@ const Home = () => {
         </div>
       </section>
       <section className="relative bg-gradient-to-b from-blue-900/100 via-blue-800/70 to-white/80 backdrop-blur pb-12 md:pb-16">
-        <div className="w-[100vw] top-0 left-0 right-0 z-0 align-center items-center justify-center flex flex-col">
-          <Button asChild size="lg" className="text-lg px-10 py-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105 transition-all duration-300">
-            <Link to="/register" className="inline-flex items-center gap-2">
-              {t('home.rejoignez_nous')}
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-          </Button>
-        </div>
         <div className="h-[5vh] md:h-[6vh]" />
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">

@@ -54,65 +54,18 @@ axiosInstance.interceptors.request.use(
 // INTERCEPTEUR - Gérer les erreurs + timeout adaptatif
 // ============================================================
 
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
 // 403 qui signent une session terminée (le compte n'existe plus pour l'auth middleware).
 // Un 403 de permission ("Seul le Président peut...") ne doit PAS déconnecter : c'est un
 // refus normal, pas une session morte.
 const SESSION_TERMINEE = [
-<<<<<<< HEAD
-=======
-=======
-// Un compte banni/suspende/archive renvoie 403, pas 401 : sans ces messages la
-// session reste "vivante" cote front alors que le backend refuse tout (§2.9).
-const MESSAGES_SESSION_TERMINEE = [
->>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
->>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
   "Votre compte a été banni",
   "Votre compte est suspendu",
   "Votre compte a été archivé",
 ];
 
-<<<<<<< HEAD
 const terminerSession = () => {
   const publicPages = ["/", "/home", "/about", "/contact", "/login", "/register", "/forgot-password", "/verify-email", "/actualites"];
   if (publicPages.includes(window.location.pathname)) return;
-=======
-<<<<<<< HEAD
-const terminerSession = () => {
-  const publicPages = ["/", "/home", "/about", "/contact", "/login", "/register", "/forgot-password", "/verify-email", "/actualites"];
-  if (publicPages.includes(window.location.pathname)) return;
-=======
-// Comparaison par prefixe : une liste de chemins exacts oublie /news/:id et
-// /actualites/:id, qui sont publiques et ne doivent pas purger la session.
-const ROUTES_PUBLIQUES = [
-  "/",
-  "/login",
-  "/register",
-  "/forgot-password",
-  "/reset-password",
-  "/verify-email",
-  "/about",
-  "/contact",
-  "/formations",
-  "/actualites",
-  "/news",
-  "/membres/inscription",
-];
-
-const estPagePublique = (pathname) =>
-  ROUTES_PUBLIQUES.some(
-    (route) =>
-      route === "/"
-        ? pathname === "/"
-        : pathname === route || pathname.startsWith(route + "/")
-  );
-
-const terminerSession = () => {
->>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
->>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
   localStorage.removeItem("token");
   localStorage.removeItem("user");
   window.dispatchEvent(new CustomEvent("auth:unauthorized"));
@@ -131,7 +84,6 @@ axiosInstance.interceptors.response.use(
       currentTimeout = Math.min(60000, currentTimeout + 10000);
     }
 
-    const status = error.response?.status;
     const rawMsg = error.response?.data?.message || error.message;
     const detail = error.response?.data?.error;
     error.translatedMessage = translateErrorMessage(rawMsg);
@@ -141,7 +93,6 @@ axiosInstance.interceptors.response.use(
       error.translatedMessage = networkMsg;
     }
 
-<<<<<<< HEAD
     if (error.response?.status === 401) {
       terminerSession();
     }
@@ -149,16 +100,6 @@ axiosInstance.interceptors.response.use(
     // Un compte archivé / banni / suspendu reçoit 403, pas 401 : sans ce cas,
     // le token reste dans le navigateur et chaque appel échoue en boucle.
     if (error.response?.status === 403 && SESSION_TERMINEE.includes(rawMsg)) {
-<<<<<<< HEAD
-=======
-=======
-    const sessionTerminee =
-      status === 401 || (status === 403 && MESSAGES_SESSION_TERMINEE.includes(rawMsg));
-
-    // 403 ordinaire = refus de permission : on garde la session.
-    if (sessionTerminee && !estPagePublique(window.location.pathname)) {
->>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
->>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
       terminerSession();
     }
     return Promise.reject(error);
@@ -237,7 +178,6 @@ export const taskAPI = {
 export const newsAPI = {
   getAll: (params) => axiosInstance.get("/news", { params }),
   getPublic: (params) => axiosInstance.get("/news/public", { params }),
-  getPublicById: (id) => axiosInstance.get(`/news/public/${id}`),
   getById: (id) => axiosInstance.get(`/news/${id}`),
   create: (data) => axiosInstance.post("/news", data),
   update: (id, data) => axiosInstance.put(`/news/${id}`, data),

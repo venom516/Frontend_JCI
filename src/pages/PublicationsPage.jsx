@@ -44,7 +44,6 @@ var PublicationsPage = function () {
   var isPresident = auth.isPresident;
   var i18n = useI18n();
   var t = i18n.t;
-  var formatDate = i18n.formatDate;
   var _publicationsState = useState([]);
   var publications = _publicationsState[0];
   var setPublications = _publicationsState[1];
@@ -73,27 +72,11 @@ var PublicationsPage = function () {
   var stats = _statsState[0];
   var setStats = _statsState[1];
 
-  var _pageState = useState(1);
-  var page = _pageState[0];
-  var setPage = _pageState[1];
-  var _totalPagesState = useState(1);
-  var totalPages = _totalPagesState[0];
-  var setTotalPages = _totalPagesState[1];
-
-  // La publication n'est modifiable/publier/archiver/supprimer que par son
-  // auteur ou le President (miroir de publicationController).
-  var canManagePub = function (pub) {
-    return isPresident || pub.createdBy?._id === user?._id;
-  };
-
-  var fetchPublications = async function (currentPage) {
+  var fetchPublications = async function () {
     try {
-      var res = await publicationAPI.getAll({ limit: 12, page: currentPage });
+      var res = await publicationAPI.getAll({ limit: 50 });
       setPublications((res.data && res.data.data) || []);
-      setPage(res.data && res.data.page ? res.data.page : 1);
-      setTotalPages(res.data && res.data.totalPages ? res.data.totalPages : 1);
     } catch (err) {
-      toast.error(err.response?.data?.message || err.translatedMessage || t("publications.erreur"));
       console.error(err);
     } finally {
       setLoading(false);
@@ -116,7 +99,6 @@ var PublicationsPage = function () {
   };
 
   useEffect(function () {
-<<<<<<< HEAD
     fetchPublications();
     fetchStats();
   }, []);
@@ -134,12 +116,6 @@ var PublicationsPage = function () {
       document.removeEventListener("visibilitychange", onVisibility);
       clearInterval(timer);
     };
-<<<<<<< HEAD
-=======
-=======
-    fetchPublications(1);
->>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
->>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
   }, []);
 
 
@@ -191,7 +167,7 @@ var PublicationsPage = function () {
       }
       setShowModal(false);
       setLoading(true);
-      fetchPublications(page);
+      fetchPublications();
     } catch (err) {
       toast.error(
         (err.response && err.response.data && err.response.data.message) ||
@@ -207,7 +183,7 @@ var PublicationsPage = function () {
       await publicationAPI.publish(id);
       toast.success(t("publications.succes_publier"));
       setLoading(true);
-      fetchPublications(page);
+      fetchPublications();
     } catch (err) {
       toast.error(
         (err.response && err.response.data && err.response.data.message) ||
@@ -221,7 +197,7 @@ var PublicationsPage = function () {
       await publicationAPI.archive(id);
       toast.success(t("publications.succes_archiver"));
       setLoading(true);
-      fetchPublications(page);
+      fetchPublications();
     } catch (err) {
       toast.error(
         (err.response && err.response.data && err.response.data.message) ||
@@ -236,7 +212,7 @@ var PublicationsPage = function () {
       await publicationAPI.delete(id);
       toast.success(t("publications.succes_supprimer"));
       setLoading(true);
-      fetchPublications(page);
+      fetchPublications();
     } catch (err) {
       toast.error(
         (err.response && err.response.data && err.response.data.message) ||
@@ -364,7 +340,7 @@ var PublicationsPage = function () {
                             </span>
                             <span>\u2022</span>
                             <span>
-                              {formatDate(pub.date || pub.createdAt)}
+                              {new Date(pub.date || pub.createdAt).toLocaleDateString()}
                             </span>
                           </div>
 
@@ -389,7 +365,7 @@ var PublicationsPage = function () {
                               </div>
                             )}
                           <div className="flex gap-1.5 mt-3 flex-wrap">
-                            {canManagePub(pub) && pub.status !== "publi\u00e9e" && (
+                            {pub.status !== "publi\u00e9e" && (
                               <Button
                                 size="sm"
                                 onClick={function () { handlePublish(pub._id); }}
@@ -398,7 +374,7 @@ var PublicationsPage = function () {
                                 {t("publications.publier")}
                               </Button>
                             )}
-                            {canManagePub(pub) && pub.status !== "archiv\u00e9e" && (
+                            {pub.status !== "archiv\u00e9e" && (
                               <Button
                                 size="sm"
                                 variant="ghost"
@@ -408,26 +384,22 @@ var PublicationsPage = function () {
                                 {t("publications.archiver")}
                               </Button>
                             )}
-                            {canManagePub(pub) && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={function () { openEdit(pub); }}
-                                className="text-xs px-3 py-1.5"
-                              >
-                                {t("common.modifier")}
-                              </Button>
-                            )}
-                            {canManagePub(pub) && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={function () { handleDelete(pub._id); }}
-                                className="text-xs px-3 py-1.5 text-red-500 hover:bg-red-50 hover:text-red-600"
-                              >
-                                {t("common.supprimer")}
-                              </Button>
-                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={function () { openEdit(pub); }}
+                              className="text-xs px-3 py-1.5"
+                            >
+                              {t("common.modifier")}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={function () { handleDelete(pub._id); }}
+                              className="text-xs px-3 py-1.5 text-red-500 hover:bg-red-50 hover:text-red-600"
+                            >
+                              {t("common.supprimer")}
+                            </Button>
                           </div>
                         </div>
                       </div>
@@ -437,34 +409,6 @@ var PublicationsPage = function () {
               </div>
             )}
           </>
-
-        {!loading && publications.length > 0 && totalPages > 1 && (
-          <div className="flex items-center justify-between pt-4">
-            <span className="text-sm text-surface-500">
-              {page} / {totalPages}
-            </span>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={page <= 1}
-                onClick={function () { setLoading(true); fetchPublications(page - 1); }}
-              >
-                {t("common.precedent")}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={function () { setLoading(true); fetchPublications(page + 1); }}
-              >
-                {t("common.suivant")}
-              </Button>
-            </div>
-          </div>
-        )}
 
         <Dialog open={showModal} onOpenChange={setShowModal}>
           <DialogContent className="max-w-lg">
@@ -564,7 +508,7 @@ var PublicationsPage = function () {
                   {submitting
                     ? t("publications.chargement")
                     : editItem
-                    ? t("common.enregistrer")
+                    ? t("site_config.save")
                     : t("publications.nouvelle")}
                 </Button>
                 <Button

@@ -36,28 +36,16 @@ const NewsDetailPage = () => {
   const fetchNews = async ({ silent = false } = {}) => {
     if (!silent) setLoading(true);
     try {
-      const response = await newsAPI.getPublicById(id);
+      const response = await newsAPI.getById(id);
       const data = response.data.data || response.data;
       setNews(data);
       setComments(data.comments || []);
     } catch (error) {
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
       if (!silent) {
         console.error("Erreur:", error);
         toast.error(t('news.non_trouvee'));
         navigate("/");
       }
-<<<<<<< HEAD
-=======
-=======
-      console.error("Erreur:", error);
-      toast.error(error.response?.data?.message || error.translatedMessage || t('news.non_trouvee'));
-      navigate("/");
->>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
->>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
     } finally {
       if (!silent) setLoading(false);
     }
@@ -91,7 +79,7 @@ const NewsDetailPage = () => {
       toast.success(t('news.succes_supprimer'));
       navigate("/");
     } catch (error) {
-      toast.error(error.response?.data?.message || error.translatedMessage || t('news.erreur'));
+      toast.error(t('news.erreur'));
     }
   };
 

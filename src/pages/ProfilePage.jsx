@@ -84,8 +84,8 @@ export default function ProfilePage() {
       const processed = await processImage(file);
       setPhotoPreview(processed);
       toast.success(t("profile.photo_prete"));
-    } catch (error) {
-      toast.error(error.response?.data?.message || error.translatedMessage || t("profile.erreur_image"));
+    } catch {
+      toast.error(t("profile.erreur_image"));
     } finally {
       setPhotoUploading(false);
     }
