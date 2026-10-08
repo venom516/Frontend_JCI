@@ -281,10 +281,20 @@ export default function ProfilePage() {
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
             <p><span className="font-medium">{t("profile.role")}</span> {translateMemberRole(user?.role)}</p>
+            {user?.roleSecondaire && (
+              <p><span className="font-medium">{t("profile.role_secondaire")}</span> {translateMemberRole(user.roleSecondaire)}</p>
+            )}
             <p><span className="font-medium">{t("profile.statut")}</span> {translateMemberStatus(user?.status)}</p>
             <p><span className="font-medium">{t("profile.date_naissance")}</span> {user?.dateNaissance ? formatDate(user.dateNaissance) : "-"}</p>
             {user?.mandatAnnee && ['President', 'PPI', 'PP'].includes(user?.role) && (
-              <p><span className="font-medium">{t("profile.mandat_annee")}</span> {user.mandatAnnee}</p>
+              <p>
+                <span className="font-medium">
+                  {user.mandatAnnee === new Date().getFullYear()
+                    ? t("profile.president_actuel")
+                    : t("profile.mandat_annee")}
+                </span>{" "}
+                {user.mandatAnnee}
+              </p>
             )}
             <p><span className="font-medium">{t("profile.inscrit_le")}</span> {formatDate(user?.createdAt)}</p>
             <p><span className="font-medium">{t("profile.derniere_connexion")}</span> {user?.lastLogin ? formatDate(user.lastLogin) : t("profile.jamais")}</p>

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, Eye, EyeOff, LogIn, Clock } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { translateErrorMessage } from "../utils/errorHelper";
 import jci from "../config/jci";
 import toast from "react-hot-toast";
 
@@ -22,7 +23,20 @@ export default function LoginPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }) }, []);
+  const isWarning = error && (
+    error.includes("attente") ||
+    error.includes("pending") ||
+    error.includes("انتظار") ||
+    error.toLowerCase().includes("expir") ||
+    error.includes("انتهت")
+  );
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (searchParams.get("expired") === "1") {
+      setError(translateErrorMessage("Session expirée"));
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,14 +46,13 @@ export default function LoginPage() {
     if (result.success) {
       const role = result.data?.role || t('common.membre');
       const roleMessages = {
-        President: '👑 ' + t("dashboard.bienvenue") + ' ' + translateMemberRole('President') + ' !',
-        SecretaireGeneral: '📋 ' + t("dashboard.bienvenue") + ' ' + translateMemberRole('SecretaireGeneral') + ' !',
-        ConseillerMedia: '📢 ' + t("dashboard.bienvenue") + ' ' + translateMemberRole('ConseillerMedia') + ' !',
-        Membre: '👤 ' + t("dashboard.bienvenue") + ' ' + translateMemberRole('Membre') + ' !'
+        President: t("dashboard.bienvenue") + ' ' + translateMemberRole('President') + ' !',
+        SecretaireGeneral: t("dashboard.bienvenue") + ' ' + translateMemberRole('SecretaireGeneral') + ' !',
+        ConseillerMedia: t("dashboard.bienvenue") + ' ' + translateMemberRole('ConseillerMedia') + ' !',
+        Membre: t("dashboard.bienvenue") + ' ' + translateMemberRole('Membre') + ' !'
       };
-      toast.success(roleMessages[role] || '✅ ' + t("common.succes") + ' !');
-      const redirect = searchParams.get("redirect");
-      navigate(redirect && redirect.startsWith("/") ? redirect : "/dashboard");
+      toast.success(roleMessages[role] || t("common.succes"));
+      navigate("/dashboard");
     } else {
       const errMsg = translateError(result.message);
       setError(errMsg);
@@ -67,9 +80,9 @@ export default function LoginPage() {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 {error && (
-                  <Alert variant={error.includes("attente") || error.includes("pending") || error.includes("انتظار") ? "default" : "destructive"} className={error.includes("attente") || error.includes("pending") || error.includes("انتظار") ? "bg-amber-50 dark:bg-amber-950 border-amber-300 dark:border-amber-700" : ""}>
-                    {error.includes("attente") || error.includes("pending") || error.includes("انتظار") ? <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" /> : <AlertCircle className="h-4 w-4" />}
-                    <AlertDescription className={error.includes("attente") || error.includes("pending") || error.includes("انتظار") ? "text-amber-800 dark:text-amber-200 font-semibold text-base" : ""}>{error}</AlertDescription>
+                  <Alert variant={isWarning ? "default" : "destructive"} className={isWarning ? "bg-amber-50 dark:bg-amber-950 border-amber-300 dark:border-amber-700" : ""}>
+                    {isWarning ? <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" /> : <AlertCircle className="h-4 w-4" />}
+                    <AlertDescription className={isWarning ? "text-amber-800 dark:text-amber-200 font-semibold text-base" : ""}>{error}</AlertDescription>
                   </Alert>
                 )}
 

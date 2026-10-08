@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Skeleton } from "../components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
+import { useAutoRefresh } from "../hooks/useAutoRefresh";
 import { Users, CheckCircle, Clock, AlertCircle, Plus, Pencil, Trash2, X, Camera } from "lucide-react";
 
 const AdminDashboard = () => {
@@ -39,6 +40,7 @@ const AdminDashboard = () => {
   const [roles, setRoles] = useState([]);
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [renameRoleData, setRenameRoleData] = useState(null);
+  const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
     fetchMembres();
@@ -46,9 +48,16 @@ const AdminDashboard = () => {
     fetchRoles();
   }, []);
 
+  useEffect(() => { fetchMembres(); }, [filterStatus]);
+
+  useAutoRefresh(() => {
+    fetchMembres();
+    fetchStats();
+  });
+
   const fetchMembres = async () => {
     try {
-      const response = await membreAPI.getAll({ limit: 100 });
+      const response = await membreAPI.getAll({ limit: 100, archived: filterStatus === "archived" ? true : undefined });
       setMembres(response.data.data || []);
     } catch (error) {
       toast.error(t('admin.erreur_chargement'));
@@ -75,45 +84,38 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleAddRole = async () => {
+  const withProcessing = (fn) => async (...args) => {
+    setProcessing(true);
+    try { await fn(...args); } finally { setProcessing(false); }
+  };
+
+  const handleAddRole = withProcessing(async () => {
     const name = prompt(t('admin.nouveau_role'));
     if (!name || name.trim().length < 2) {
       toast.error(t('admin.erreur_nom_role'));
       return;
     }
-    try {
-      await membreAPI.create({ nom: "Nouveau", prenom: "Membre", email: "role-" + Date.now() + "@temp.jci.tn", password: "Temp@123456", role: name.trim(), status: "actif" });
-      toast.success(t('admin.succes_role_cree', { name: name.trim() }));
-      fetchRoles();
-    } catch (error) {
-      toast.error(t('admin.erreur_creation_role'));
-    }
-  };
+    await membreAPI.create({ nom: "Nouveau", prenom: "Membre", email: "role-" + Date.now() + "@temp.jci.tn", password: "Temp@123456", role: name.trim(), status: "actif" });
+    toast.success(t('admin.succes_role_cree', { name: name.trim() }));
+    fetchRoles();
+  });
 
-  const handleRenameRole = async (oldName) => {
+  const handleRenameRole = withProcessing(async (oldName) => {
     const newName = prompt(t('admin.nouveau_nom_pour', { name: oldName }), oldName);
     if (!newName || newName.trim() === oldName) return;
-    try {
-      await membreAPI.renameRole(oldName, newName.trim());
-      toast.success(t('admin.succes_role_renomme', { oldName: oldName, newName: newName.trim() }));
-      fetchRoles();
-      fetchMembres();
-    } catch (error) {
-      toast.error(t('admin.erreur_renommage'));
-    }
-  };
+    await membreAPI.renameRole(oldName, newName.trim());
+    toast.success(t('admin.succes_role_renomme', { oldName: oldName, newName: newName.trim() }));
+    fetchRoles();
+    fetchMembres();
+  });
 
-  const handleDeleteRole = async (roleName) => {
+  const handleDeleteRole = withProcessing(async (roleName) => {
     if (!window.confirm(t('admin.confirmer_supprimer_role', { roleName: roleName }))) return;
-    try {
-      const res = await membreAPI.deleteRole(roleName);
-      toast.success(res.data.message || t('admin.succes_role_supprime', { roleName: roleName }));
-      fetchRoles();
-      fetchMembres();
-    } catch (error) {
-      toast.error(t('admin.erreur_suppression_role'));
-    }
-  };
+    const res = await membreAPI.deleteRole(roleName);
+    toast.success(res.data.message || t('admin.succes_role_supprime', { roleName: roleName }));
+    fetchRoles();
+    fetchMembres();
+  });
 
   const handlePhotoChange = (e, isEdit = false) => {
     const file = e.target.files[0];
@@ -131,57 +133,48 @@ const AdminDashboard = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleValidate = async (id, action) => {
-    try {
-      await membreAPI.validate(id, action);
-      toast.success(t('admin.succes_membre_valide', { action: action === 'validate' ? 'valide' : 'rejete' }));
-      fetchMembres();
-      fetchStats();
-    } catch (error) {
-      toast.error(error.response?.data?.message || t('admin.erreur_validation'));
-    }
-  };
+  const handleValidate = withProcessing(async (id, action) => {
+    await membreAPI.validate(id, action);
+    toast.success(t('admin.succes_membre_valide', { action: action === 'validate' ? 'valide' : 'rejete' }));
+    fetchMembres();
+    fetchStats();
+  });
 
-  const handleSuspendre = async (id) => {
+  const handleSuspendre = withProcessing(async (id) => {
     if (!window.confirm(t('admin.confirmer_suspendre'))) return;
-    try {
-      await membreAPI.suspendre(id);
-      toast.success(t('admin.succes_membre_suspendu'));
-      fetchMembres();
-      fetchStats();
-    } catch (error) {
-      toast.error(error.response?.data?.message || t('common.erreur'));
-    }
-  };
+    await membreAPI.suspendre(id);
+    toast.success(t('admin.succes_membre_suspendu'));
+    fetchMembres();
+    fetchStats();
+  });
 
-  const handleReactiver = async (id) => {
+  const handleReactiver = withProcessing(async (id) => {
     if (!window.confirm(t('admin.confirmer_reactiver'))) return;
-    try {
-      await membreAPI.reactiver(id);
-      toast.success(t('admin.succes_membre_reactive'));
-      fetchMembres();
-      fetchStats();
-    } catch (error) {
-      toast.error(error.response?.data?.message || t('common.erreur'));
-    }
-  };
+    await membreAPI.reactiver(id);
+    toast.success(t('admin.succes_membre_reactive'));
+    fetchMembres();
+    fetchStats();
+  });
 
-  const handleDelete = async (id) => {
+  const handleDelete = withProcessing(async (id) => {
     if (!window.confirm(t('admin.confirmer_supprimer'))) return;
-    try {
-      await membreAPI.delete(id);
-      toast.success(t('admin.succes_membre_supprime'));
-      fetchMembres();
-      fetchStats();
-    } catch (error) {
-      toast.error(error.response?.data?.message || t('common.erreur'));
-    }
-  };
+    await membreAPI.delete(id);
+    toast.success(t('admin.succes_membre_supprime'));
+    fetchMembres();
+    fetchStats();
+  });
 
   const handleView = (membre) => {
     setSelectedMembre(membre);
     setShowModal(true);
   };
+
+  // Un compte archivé ou refusé est consultable uniquement :
+  // seul le bouton "Voir" reste disponible sur sa ligne
+  const estLectureSeule = (membre) => Boolean(membre.archiver) || membre.status === "refusé";
+
+  // Statut affiché : un refus reste "Refusé", un compte supprimé reste "Archivé"
+  const getStatutAffiche = (membre) => (membre.status === "refusé" ? "refusé" : membre.archiver ? "archivé" : membre.status);
 
   const handleEdit = (membre) => {
     setSelectedMembre(membre);
@@ -203,6 +196,7 @@ const AdminDashboard = () => {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     if (!editForm || !selectedMembre) return;
+    setProcessing(true);
     try {
       await membreAPI.update(selectedMembre._id, editForm);
       toast.success(t('admin.succes_profil_mis_a_jour'));
@@ -212,7 +206,7 @@ const AdminDashboard = () => {
       fetchMembres();
     } catch (error) {
       toast.error(t('admin.erreur_mise_a_jour'));
-    }
+    } finally { setProcessing(false); }
   };
 
   const handleAddSubmit = async (e) => {
@@ -221,6 +215,7 @@ const AdminDashboard = () => {
       toast.error(t('admin.erreur_champs_requis'));
       return;
     }
+    setProcessing(true);
     try {
       await axiosInstance.post("/membres", addForm);
       toast.success(t('admin.succes_membre_ajoute'));
@@ -234,7 +229,7 @@ const AdminDashboard = () => {
       fetchStats();
     } catch (error) {
       toast.error(error.response?.data?.message || t('admin.erreur_ajout'));
-    }
+    } finally { setProcessing(false); }
   };
 
   const getStatusBadge = (status) => {
@@ -245,6 +240,8 @@ const AdminDashboard = () => {
       suspendu: "bg-blue-100 text-blue-700",
       banni: "bg-red-100 text-red-700",
       "non-valide": "bg-accent text-muted-foreground",
+      "refusé": "bg-orange-100 text-orange-700",
+      "archivé": "bg-gray-100 text-gray-500",
     };
     return colors[status] || "bg-accent text-muted-foreground";
   };
@@ -270,7 +267,7 @@ const AdminDashboard = () => {
       m.prenom?.toLowerCase().includes(search.toLowerCase()) ||
       m.email?.toLowerCase().includes(search.toLowerCase());
     const matchRole = filterRole === "all" || m.role === filterRole;
-    const matchStatus = filterStatus === "all" || m.status === filterStatus;
+    const matchStatus = filterStatus === "all" || filterStatus === "archived" || m.status === filterStatus;
     return matchSearch && matchRole && matchStatus;
   });
 
@@ -329,7 +326,7 @@ const AdminDashboard = () => {
             <h1 className="text-3xl font-bold text-foreground">{t('admin.titre')}</h1>
             <p className="text-muted-foreground mt-1">{t('admin.sous_titre')}</p>
           </div>
-          <Button onClick={() => setShowAddModal(true)} className="flex items-center gap-2">
+          <Button onClick={() => setShowAddModal(true)} className="flex items-center gap-2" disabled={processing}>
             <Plus className="w-5 h-5" />
             {t('admin.ajouter_membre')}
           </Button>
@@ -348,6 +345,9 @@ const AdminDashboard = () => {
           <StatCard label={t('common.suspendus')} value={stats.suspendus || 0}
             color="bg-accent-rose/10 text-accent-rose"
             icon={<AlertCircle className="w-7 h-7" />} />
+          <StatCard label={t('members.supprimes')} value={stats.supprimes || 0}
+            color="bg-gray-100 text-gray-500"
+            icon={<Trash2 className="w-7 h-7" />} />
         </div>
 
         <Card className="p-6">
@@ -386,6 +386,7 @@ const AdminDashboard = () => {
                 <SelectItem value="suspendu">{t('admin.suspendu')}</SelectItem>
                 <SelectItem value="banni">{t('admin.banni')}</SelectItem>
                 <SelectItem value="non-valide">{t('admin.non_valide')}</SelectItem>
+                <SelectItem value="archived">{t('members.supprimes')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -429,33 +430,37 @@ const AdminDashboard = () => {
                         </Badge>
                       </td>
                       <td className="py-3 px-6">
-                        <Badge variant="secondary" className={getStatusBadge(m.status)}>
-                          {translateMemberStatus(m.status)}
-                        </Badge>
+              <Badge variant="secondary" className={getStatusBadge(getStatutAffiche(m))}>
+                {translateMemberStatus(getStatutAffiche(m))}
+                          </Badge>
                       </td>
                       <td className="py-3 px-6 text-sm text-muted-foreground">
                         {formatDate(m.createdAt)}
                       </td>
                       <td className="py-3 px-6 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          <Button variant="ghost" size="sm" onClick={() => handleView(m)}>
+                          <Button variant="ghost" size="sm" onClick={() => handleView(m)} disabled={processing}>
                             {t('common.voir')}
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleEdit(m)} className="text-primary-600 hover:bg-primary-50">
-                            {t('common.modifier')}
-                          </Button>
-                          {m.status === "actif" ? (
-                            <Button variant="ghost" size="sm" onClick={() => handleSuspendre(m._id)} className="text-accent-amber hover:bg-accent-amber/10">
-                              {t('common.suspendre')}
-                            </Button>
-                          ) : (m.status === "suspendu" || m.status === "banni") ? (
-                            <Button variant="ghost" size="sm" onClick={() => handleReactiver(m._id)} className="text-accent-emerald hover:bg-accent-emerald/10">
-                              {t('common.reactiver')}
-                            </Button>
-                          ) : null}
-                          <Button variant="ghost" size="sm" onClick={() => handleDelete(m._id)} className="text-accent-rose hover:bg-accent-rose/10">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
+                          {!estLectureSeule(m) && (
+                            <>
+                              <Button variant="ghost" size="sm" onClick={() => handleEdit(m)} className="text-primary-600 hover:bg-primary-50" disabled={processing}>
+                                {t('common.modifier')}
+                              </Button>
+                              {m.status === "actif" ? (
+                                <Button variant="ghost" size="sm" onClick={() => handleSuspendre(m._id)} className="text-accent-amber hover:bg-accent-amber/10" disabled={processing}>
+                                  {t('common.suspendre')}
+                                </Button>
+                              ) : (m.status === "suspendu" || m.status === "banni") ? (
+                                <Button variant="ghost" size="sm" onClick={() => handleReactiver(m._id)} className="text-accent-emerald hover:bg-accent-emerald/10" disabled={processing}>
+                                  {t('common.reactiver')}
+                                </Button>
+                              ) : null}
+                              <Button variant="ghost" size="sm" onClick={() => handleDelete(m._id)} className="text-accent-rose hover:bg-accent-rose/10" disabled={processing}>
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -472,7 +477,7 @@ const AdminDashboard = () => {
               <h2 className="text-xl font-bold text-foreground">{t('admin.gestion_roles')}</h2>
               <p className="text-sm text-muted-foreground">{t('admin.gestion_roles_sous_titre')}</p>
             </div>
-            <Button variant="outline" onClick={handleAddRole} className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleAddRole} className="flex items-center gap-2" disabled={processing}>
               <Plus className="w-4 h-4" />
               {t('admin.nouveau_role')}
             </Button>
@@ -485,11 +490,11 @@ const AdminDashboard = () => {
                 <span className="font-medium text-sm text-foreground">{r.name}</span>
                 <span className="text-xs text-muted-foreground">({r.count})</span>
                 <button onClick={() => handleRenameRole(r.name)}
-                  className="text-primary-600 hover:text-primary-800 ml-1 transition-colors" title={t('common.renommer')}>
+                  className="text-primary-600 hover:text-primary-800 ml-1 transition-colors disabled:opacity-50" disabled={processing} title={t('common.renommer')}>
                   <Pencil className="w-4 h-4" />
                 </button>
                 <button onClick={() => handleDeleteRole(r.name)}
-                  className="text-accent-rose hover:text-accent-rose/80 transition-colors" title={t('common.supprimer')}>
+                  className="text-accent-rose hover:text-accent-rose/80 transition-colors disabled:opacity-50" disabled={processing} title={t('common.supprimer')}>
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -525,7 +530,7 @@ const AdminDashboard = () => {
                 </div>
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl ring-1 ring-border">
                   <span className="text-sm font-semibold text-muted-foreground">{t('admin.statut')}</span>
-                  <Badge variant="secondary" className={getStatusBadge(selectedMembre.status)}>{translateMemberStatus(selectedMembre.status)}</Badge>
+                  <Badge variant="secondary" className={getStatusBadge(getStatutAffiche(selectedMembre))}>{translateMemberStatus(getStatutAffiche(selectedMembre))}</Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl ring-1 ring-border">
                   <span className="text-sm font-semibold text-muted-foreground">{t('admin.inscrit_le')}</span>
@@ -607,7 +612,7 @@ const AdminDashboard = () => {
                     </Select>
                   </div>
                 </div>
-                <Button type="submit" className="w-full">
+                <Button type="submit" className="w-full" disabled={processing}>
                   {t('admin.enregistrer')}
                 </Button>
               </form>
@@ -701,7 +706,7 @@ const AdminDashboard = () => {
                 </SelectContent>
               </Select>
             </div>
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full" disabled={processing}>
               {t('admin.ajouter')}
             </Button>
           </form>

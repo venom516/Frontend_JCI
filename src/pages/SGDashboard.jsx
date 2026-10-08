@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useI18n } from "../contexts/I18nContext";
-import { dashboardAPI } from "../api/axios";
+import { dashboardAPI, eventAPI } from "../api/axios";
+import { useAutoRefresh } from "../hooks/useAutoRefresh";
 import { Skeleton } from "../components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
@@ -14,24 +15,52 @@ const SGDashboard = () => {
   const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
 
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchData = async (quiet = false) => {
       try {
         const response = await dashboardAPI.getSG();
         setData(response.data.data);
       } catch (error) {
         console.error("Erreur chargement dashboard:", error);
       } finally {
-        setLoading(false);
+        if (!quiet) setLoading(false);
       }
     };
+
+  // Les événements sont chargés séparément : l'endpoint du dashboard SG ne les
+  // retourne pas. Le filtre "à venir" est refait ici car le serveur ne filtre
+  // sur la date que pour le rôle Membre.
+  const fetchEvents = async () => {
+      try {
+        const res = await eventAPI.getAll();
+        const all = res.data.data || [];
+        // Comparaison au début de la journée : un événement programmé
+        // aujourd'hui vaut 00:00, il serait exclu si on le comparait à
+        // l'heure courante.
+        const debutDuJour = new Date();
+        debutDuJour.setHours(0, 0, 0, 0);
+        setUpcomingEvents(
+          all
+            .filter((e) => e.date && new Date(e.date) >= debutDuJour && e.status !== "annulée")
+            .sort((a, b) => new Date(a.date) - new Date(b.date))
+        );
+      } catch (error) {
+        console.error("Erreur chargement événements:", error);
+        setUpcomingEvents([]);
+      }
+    };
+
+  useEffect(() => {
     fetchData();
+    fetchEvents();
   }, []);
+
+  useAutoRefresh(() => fetchData(true));
 
   if (loading) return <Skeleton className="h-96 w-full" />;
 
-  const { stats, recentDocuments, upcomingEntretiens } = data || {};
+  const { stats, recentDocuments } = data || {};
 
   return (
     <div className="page-container min-h-screen bg-surface-50/80">
@@ -59,6 +88,43 @@ const SGDashboard = () => {
 
         <div className="grid md:grid-cols-2 gap-6 mb-8">
           <Card className="p-6 md:p-8 card-hover">
+            <div className="flex items-center justify-between gap-2 mb-6">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-6 h-6 text-accent-cyan" />
+                <CardTitle className="section-title font-display text-xl font-bold text-surface-800">{t("dashboard.evenements_a_venir")}</CardTitle>
+              </div>
+              <Link to="/events" className="text-xs font-medium text-primary-600 hover:text-primary-700 hover:underline">
+                {t("dashboard.voir_toutes")}
+              </Link>
+            </div>
+            {upcomingEvents.length === 0 ? (
+              <p className="text-surface-400 text-center py-8 italic">{t("dashboard.aucun_evenement")}</p>
+            ) : (
+              <div className="space-y-3">
+                {upcomingEvents.slice(0, 5).map((e) => (
+                  <div key={e._id} className="flex items-start justify-between gap-3 p-4 bg-surface-50/80 rounded-2xl ring-1 ring-surface-200/50 animate-fade-in-up">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-accent-cyan/10 text-accent-cyan flex items-center justify-center shrink-0">
+                        <Calendar className="w-5 h-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-surface-800 truncate">{e.titre}</p>
+                        <p className="text-xs text-surface-400">
+                          {e.date ? formatDate(e.date) : ""}
+                          {e.lieu ? ` · ${e.lieu}` : ""}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge className={"text-xs px-3 py-1 rounded-xl shrink-0 " + getEventStatusColor(e.status)}>
+                      {translateStatus(e.status)}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          <Card className="p-6 md:p-8 card-hover">
             <div className="flex items-center gap-2 mb-6">
               <FileText className="w-6 h-6 text-primary-500" />
               <CardTitle className="section-title font-display text-xl font-bold text-surface-800">{t("dashboard.derniers_documents")}</CardTitle>
@@ -76,32 +142,6 @@ const SGDashboard = () => {
                       <span className="font-medium text-surface-700">{d.titre}</span>
                     </div>
                     <Badge className={"text-xs px-3 py-1 rounded-xl " + getDocStatusColor(d.status)}>{translateStatus(d.status)}</Badge>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-
-          <Card className="p-6 md:p-8 card-hover">
-            <div className="flex items-center gap-2 mb-6">
-              <Calendar className="w-6 h-6 text-accent-amber" />
-              <CardTitle className="section-title font-display text-xl font-bold text-surface-800">{t("dashboard.entretiens_a_venir")}</CardTitle>
-            </div>
-            {upcomingEntretiens?.length === 0 ? (
-              <p className="text-surface-400 text-center py-8">{t("dashboard.aucun_entretien")}</p>
-            ) : (
-              <div className="space-y-3">
-                {upcomingEntretiens?.map((e) => (
-                  <div key={e._id} className="flex items-center justify-between p-4 bg-surface-50/80 rounded-2xl ring-1 ring-surface-200/50 animate-fade-in-up">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-accent-amber/10 text-accent-amber flex items-center justify-center">
-                        <Calendar className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-surface-800">{e.membre?.prenom} {e.membre?.nom}</p>
-                        <p className="text-xs text-surface-400">{formatDate(e.date)}</p>
-                      </div>
-                    </div>
                   </div>
                 ))}
               </div>
@@ -156,6 +196,17 @@ const StatCard = ({ icon, label, value, color }) => {
       <div className="stat-label text-sm text-surface-500 mt-0.5">{label}</div>
     </div>
   );
+};
+
+const getEventStatusColor = (status) => {
+  const colors = {
+    "planifiée": "bg-accent-cyan/10 text-accent-cyan",
+    "en-cours": "bg-accent-emerald/10 text-accent-emerald",
+    "terminée": "bg-surface-100 text-surface-600",
+    "reportée": "bg-accent-amber/10 text-accent-amber",
+    "annulée": "bg-accent-rose/10 text-accent-rose",
+  };
+  return colors[status] || "bg-surface-100 text-surface-600";
 };
 
 const getDocStatusColor = (status) => {

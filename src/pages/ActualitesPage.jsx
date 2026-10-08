@@ -8,7 +8,9 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import toast from "react-hot-toast";
 import { Calendar, ArrowRight, Newspaper, AlertCircle, RefreshCw } from "lucide-react";
-const API_URL = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:5000";
+import { resolveImage, handleImageError } from "../utils/image";
+import { subscribeNewsChanged } from "../utils/newsEvents";
+const API_URL = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:5001";
 
 const ActualitesPage = () => {
   const { t, formatDate } = useI18n();
@@ -31,6 +33,19 @@ const ActualitesPage = () => {
 
   useEffect(() => {
     fetchNews();
+  }, [fetchNews]);
+
+  useEffect(() => {
+    const onNewsChanged = () => fetchNews();
+    const onFocus = () => { if (document.visibilityState === "visible") fetchNews(); };
+    const offNewsChanged = subscribeNewsChanged(onNewsChanged);
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      offNewsChanged();
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
   }, [fetchNews]);
 
   const sortedNews = [...news].sort((a, b) => {
@@ -110,16 +125,20 @@ const ActualitesPage = () => {
               const content = item.contenu || item.content || "";
               const date = item.date || item.createdAt || item.publishedAt;
               const image = item.image || item.photo || null;
+              const imageSrc = image
+                ? (image.startsWith("http") ? resolveImage(image) : API_URL + image)
+                : null;
               const id = item._id || item.id;
 
               return (
                 <Card key={id} className="group overflow-hidden">
-                  {image && (
-                    <div className="relative h-48 overflow-hidden">
+                  {imageSrc && (
+                    <div className="relative h-48 overflow-hidden" data-img-box>
                       <img
-                        src={image.startsWith("http") ? image : API_URL + image}
+                        src={imageSrc}
                         alt={title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        onError={handleImageError}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                     </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useI18n } from "../contexts/I18nContext";
 import { membreAPI, entretienAPI } from "../api/axios";
@@ -10,8 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { useAutoRefresh } from "../hooks/useAutoRefresh";
+import { notifyMembresChanged, subscribeMembresChanged } from "../utils/membreEvents";
 import {
-  Search, X, Users, UserPlus, Pencil, Trash2, Eye, Shield, 
+  Search, X, Users, UserPlus, Pencil, Trash2, Eye, Shield,
   AlertCircle, CheckCircle, Clock, Ban, RefreshCw, Plus
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -32,22 +34,92 @@ export default function MembresPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
-  const [stats, setStats] = useState({ total: 0, actifs: 0, enAttente: 0, suspendus: 0 });
+  const [stats, setStats] = useState({ total: 0, actifs: 0, enAttente: 0, suspendus: 0, bannis: 0, refuses: 0, nonInscrits: 0, supprimes: 0 });
   const [roles, setRoles] = useState([]);
   const [entretiens, setEntretiens] = useState([]);
+  const [processing, setProcessing] = useState(false);
 
   useEffect(() => { fetchMembres(); fetchStats(); fetchRoles(); fetchEntretiens(); }, []);
 
+  useEffect(() => { fetchMembres(); }, [filterStatus]);
 
-  const fetchMembres = async () => {
-    setLoading(true);
-    try { const r = await membreAPI.getAll(); setMembres(r.data.data || []); }
-    catch (e) { toast.error(t("members.erreur_chargement")); }
-    finally { setLoading(false); }
+  // Polling : sert uniquement a COMPARER. Silencieux = pas de squelette, et
+  // si les donnees sont identiques fetchMembres ne touche pas a l'etat, donc
+  // la page ne se re-rend pas.
+  useAutoRefresh(() => {
+    fetchMembres({ silencieux: true });
+    fetchStats();
+  });
+
+  // Rafraichissement IMMEDIAT quand la liste des membres change, que ce soit
+  // ici meme (validation, edition, bannissement, suppression) ou depuis une
+  // autre page / un autre onglet (inscription d'un nouveau candidat).
+  // Le polling de useAutoRefresh reste en filet de securite si l'evenement
+  // est rate (autre appareil, backend modifie hors de l'application).
+  // Abonnement avec un ref : l'effet ne s'execute qu'une fois (deps []), donc
+  // une closure directe aurait capture le fetchMembres du PREMIER rendu, avec
+  // le filterStatus initial. Un changement de filtre declenche alors une
+  // requete avec le mauvais parametre (la vue "Refusés" se viderait au profit
+  // de la liste complete). Le ref est mis a jour a chaque rendu, comme dans
+  // useAutoRefresh, donc le rappel utilise toujours l'etat courant.
+  const refreshMembresRef = useRef(null);
+  refreshMembresRef.current = () => {
+    // Silencieux aussi apres une action : l'evenement annonce un changement,
+    // donc la comparaison detectera la difference et mettra a jour, sans
+    // faire clignoter la page entre le clic et la reponse.
+    fetchMembres({ silencieux: true });
+    fetchStats();
   };
 
+  useEffect(() => {
+    return subscribeMembresChanged(() => refreshMembresRef.current?.());
+  }, []);
+
+
+// ============================================================
+// RAFRAICHISSEMENT : UNIQUEMENT QUAND LES DONNEES CHANGENT
+// ============================================================
+// Le polling (toutes les 30 s) doit servir a COMPARER, pas a reconstruire la
+// page. Si on Calling setMembres a chaque fois, React re-rend la liste et le
+// squelette de chargement (loading) s'affiche puis disparait : c'est
+// exactement le clignotement signaler. Donc on garde la reference precedente
+// quand rien n'a change : React voit le meme objet et ne re-rend pas.
+
+// Signature limitee aux champs qui apparaissent sur la ligne du membre.
+// 'updatedAt' suffit a detecter une edition : Mongoose le met a jour a chaque
+// save.
+const signatureMembre = (m) =>
+  [m._id, m.nom, m.prenom, m.email, m.telephone, m.role, m.status, m.archiver, m.photo, m.updatedAt, m.createdAt]
+    .map((v) => (v === undefined || v === null ? "" : String(v)))
+    .join("|");
+
+const membresIdentiques = (a, b) =>
+  a.length === b.length && a.every((m, i) => signatureMembre(m) === signatureMembre(b[i]));
+
+const fetchMembres = async ({ silencieux = false } = {}) => {
+    // En mode silencieux on ne touche pas 'loading' : pas de squelette.
+    if (!silencieux) setLoading(true);
+    try {
+      const params = {};
+      if (filterStatus === "archived") params.archived = true;
+      if (filterStatus === "refused") params.refused = true;
+      const r = await membreAPI.getAll(params);
+      const data = r.data.data || [];
+      setMembres((prev) => (membresIdentiques(prev, data) ? prev : data));
+    }
+    catch (e) {
+      if (silencieux) console.error(e);
+      else toast.error(t("members.erreur_chargement"));
+    }
+    finally { if (!silencieux) setLoading(false); }
+};
+
   const fetchStats = async () => {
-    try { const r = await membreAPI.getStats(); setStats(r.data.data || {}); }
+    try {
+      const r = await membreAPI.getStats();
+      const data = r.data.data || {};
+      setStats((prev) => (JSON.stringify(prev) === JSON.stringify(data) ? prev : data));
+    }
     catch (e) { console.error(e); }
   };
 
@@ -68,113 +140,129 @@ export default function MembresPage() {
   };
 
   const getEntretienStatusLabel = (s) => ({
-    demandé: t('entretiens.demande'), 'en-attente': t('entretiens.en_attente'), approuvé: t('entretiens.approuves'),
-    réalisé: t('entretiens.realise'), annulé: t('entretiens.annule'), refusé: t('members.refuse')
+    'planifié': t('entretiens.planifie'), 'en-cours': t('entretiens.en_cours'), 'terminé': t('entretiens.termine'),
+    'accepté': t('entretiens.accepte'), 'rejeté': t('entretiens.rejete_statut')
   })[s] || s;
 
   const getEntretienBadge = (s) => ({
-    demandé: 'secondary', 'en-attente': 'secondary', approuvé: 'default',
-    réalisé: 'default', annulé: 'outline', refusé: 'destructive'
+    'planifié': 'secondary', 'en-cours': 'secondary', 'terminé': 'outline',
+    'accepté': 'default', 'rejeté': 'destructive'
   })[s] || 'secondary';
 
-  const handleValidate = async (id, action) => {
-    try { await membreAPI.validate(id, action); toast.success(t("members.succes_validation")); fetchMembres(); fetchStats(); }
-    catch (e) { toast.error(t("members.erreur_validation")); }
+  const withProcessing = (fn) => async (...args) => {
+    setProcessing(true);
+    try { await fn(...args); } finally { setProcessing(false); }
   };
 
-  const handleSuspendre = async (id) => {
+  // Emission de l'evenement uniquement : c'est l'abonnement (useEffect
+  // ci-dessus) qui recharge la liste et les statistiques. Un seul chemin de
+  // rechargement, donc pas de double requete apres chaque action.
+  const rafraichirMembres = () => notifyMembresChanged();
+
+  const handleValidate = withProcessing(async (id, action) => {
+    await membreAPI.validate(id, action); toast.success(t("members.succes_validation")); rafraichirMembres();
+  });
+
+  const handleSuspendre = withProcessing(async (id) => {
     if (!window.confirm(t("members.confirmer_suspension"))) return;
-    try { await membreAPI.suspendre(id); toast.success(t("members.succes_suspendu")); fetchMembres(); fetchStats(); }
-    catch (e) { toast.error(t("common.erreur")); }
-  };
+    await membreAPI.suspendre(id); toast.success(t("members.succes_suspendu")); rafraichirMembres();
+  });
 
-  const handleReactiver = async (id) => {
+  const handleReactiver = withProcessing(async (id) => {
     if (!window.confirm(t("members.confirmer_reactivation"))) return;
-    try { await membreAPI.reactiver(id); toast.success(t("members.succes_reactive")); fetchMembres(); fetchStats(); }
-    catch (e) { toast.error(t("common.erreur")); }
-  };
+    await membreAPI.reactiver(id); toast.success(t("members.succes_reactive")); rafraichirMembres();
+  });
 
-  const handleDelete = async (id) => {
+  const handleBannir = withProcessing(async (id) => {
+    if (!window.confirm(t("members.confirmer_bannissement") || "Bannir définitivement ce membre ?")) return;
+    await membreAPI.bannir(id); toast.success(t("members.succes_banni") || "Membre banni"); rafraichirMembres();
+  });
+
+  const handleDelete = withProcessing(async (id) => {
     if (!window.confirm(t("members.confirmer_suppression_definitive"))) return;
-    try { await membreAPI.delete(id); toast.success(t("members.succes_supprime")); fetchMembres(); fetchStats(); }
-    catch (e) { toast.error(e.translatedMessage || t("members.erreur_validation")); }
-  };
+    await membreAPI.delete(id); toast.success(t("members.succes_supprime")); rafraichirMembres();
+  });
 
   const handleView = (m) => { setSelectedMembre(m); setShowModal(true); };
+
+  // Un compte archivé ou refusé est consultable uniquement :
+  // seul le bouton "Voir" reste disponible sur sa ligne
+  const estLectureSeule = (m) => Boolean(m.archiver) || m.status === "refusé";
+
+  // Statut affiché : un refus reste "Refusé", un compte supprimé reste "Archivé"
+  const getStatutAffiche = (m) => (m.status === "refusé" ? "refusé" : m.archiver ? "archivé" : m.status);
+
 
   const handleEdit = (m) => {
     setSelectedMembre(m);
     setEditForm({
       nom: m.nom || "", prenom: m.prenom || "", email: m.email || "",
       telephone: m.telephone || "", adresse: m.adresse || "",
+      sexe: m.sexe || "",
       situationProfessionnelle: m.situationProfessionnelle || "Autre",
-      role: m.role || "Membre", status: m.status || "actif", photo: m.photo || ""
+      role: m.role || "Membre", status: m.status || "actif", photo: m.photo || "",
+      roleSecondaire: m.roleSecondaire || ""
     });
     setPhotoPreview(m.photo || null);
     setShowEditModal(true);
   };
 
-  const handleAddRole = async () => {
+  const handleAddRole = withProcessing(async () => {
     const name = prompt(t('admin.nouveau_role'));
     if (!name || name.trim().length < 2) return;
-    try {
-      await membreAPI.createRole(name.trim());
-      toast.success(t('admin.succes_role_cree', { name: name.trim() }));
-      fetchRoles();
-    } catch (e) { toast.error(e.response?.data?.message || t('admin.erreur_creation_role')); }
-  };
+    await membreAPI.createRole(name.trim());
+    toast.success(t('admin.succes_role_cree', { name: name.trim() }));
+    fetchRoles();
+  });
 
-  const handleRenameRole = async (oldName) => {
+  const handleRenameRole = withProcessing(async (oldName) => {
     const newName = prompt(t('admin.nouveau_nom_pour', { name: oldName }), oldName);
     if (!newName || newName.trim() === oldName) return;
-    try {
-      await membreAPI.renameRole(oldName, newName.trim());
-      toast.success(t('admin.succes_role_renomme', { oldName, newName: newName.trim() }));
-      fetchRoles();
-      fetchMembres();
-    } catch (e) { toast.error(e.response?.data?.message || t('admin.erreur_renommage')); }
-  };
+    await membreAPI.renameRole(oldName, newName.trim());
+    toast.success(t('admin.succes_role_renomme', { oldName, newName: newName.trim() }));
+    fetchRoles();
+    rafraichirMembres();
+  });
 
-  const handleDeleteRole = async (roleName) => {
+  const handleDeleteRole = withProcessing(async (roleName) => {
     if (!window.confirm(t('admin.confirmer_supprimer_role', { roleName }))) return;
-    try {
-      const res = await membreAPI.deleteRole(roleName);
-      toast.success(res.data?.message || t('admin.succes_role_supprime', { roleName }));
-      fetchRoles();
-      fetchMembres();
-    } catch (e) { toast.error(e.response?.data?.message || t('admin.erreur_suppression_role')); }
-  };
+    const res = await membreAPI.deleteRole(roleName);
+    toast.success(res.data?.message || t('admin.succes_role_supprime', { roleName }));
+    fetchRoles();
+    rafraichirMembres();
+  });
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    setProcessing(true);
     try {
       const p = { ...editForm };
       if (!isPresident) { delete p.role; delete p.status; }
-      // Vérifier unicité du rôle côté frontend
-      if (p.role && p.role !== selectedMembre.role && UNIQUE_ROLES.includes(p.role)) {
+      if (p.role && p.role !== selectedMembre.role && UNIQUE_ROLES.includes(p.role) && p.role !== 'President') {
         const alreadyAssigned = membres.some(m => m._id !== selectedMembre._id && m.role === p.role && m.status !== 'refusé');
         if (alreadyAssigned) {
-          toast.error("Ce rôle est déjà attribué à un autre membre.");
+          toast.error(t("members.role_deja_attribue"));
           return;
         }
       }
       await membreAPI.update(selectedMembre._id, p);
       toast.success(t("members.succes_mis_a_jour"));
-      setShowEditModal(false); setPhotoPreview(null); fetchMembres();
-    } catch (e) { toast.error(t("members.erreur_mise_a_jour")); }
+      setShowEditModal(false); setPhotoPreview(null); rafraichirMembres();
+        } catch (e) { toast.error(e.response?.data?.message || t("members.erreur_mise_a_jour")); }
+    finally { setProcessing(false); }
   };
 
   const getStatusBadge = (s) => ({
     actif: "default", en_attente: "secondary", "en-attente": "secondary",
-    "non-valide": "destructive", suspendu: "destructive", banni: "destructive",
-    refusé: "outline"
+    "non-valide": "destructive", "non-inscrit": "outline", suspendu: "destructive",
+    banni: "destructive", refusé: "outline", "archivé": "outline"
   })[s] || "secondary";
 
   const getRoleLabel = (r) => ({
     President: t("members.role_president"), SecretaireGeneral: t("members.role_sg"),
     ConseillerMedia: t("members.role_media"),
     "Conseiller Juridique": t("members.role_conseiller"),
-    "Sénateur": t("members.role_senateur"), "Past President": t("members.role_past_president"), PPI: t("members.role_ppi"),
+    "Sénateur": t("members.role_senateur"), "Past President": t("members.role_past_president"), PP: t("members.role_past_president"), PPI: t("members.role_ppi"),
     VPPRE: t("members.role_vppre"), VPFD: t("members.role_vpfd"),
     Tresorie: t("members.role_tresorie"),
     Membre: t("members.role_membre")
@@ -183,8 +271,9 @@ export default function MembresPage() {
   const getStatusLabel = (s) => ({
     actif: t("members.actif"), en_attente: t("members.en_attente"),
     "en-attente": t("members.en_attente"), "non-valide": t("members.non_valide"),
-    suspendu: t("members.suspendu"), banni: t("members.banni"),
-    refusé: t("members.refuse")
+    "non-inscrit": t("members.non_valide"), suspendu: t("members.suspendu"),
+    banni: t("members.banni"), refusé: t("members.refuse"),
+    "archivé": t("members.archive")
   })[s] || s;
 
   const getSituationLabel = (s) => ({ Etudiant: t("members.etudiant"), Professionnel: t("members.professionnel"), Autre: t("members.autre") })[s] || s;
@@ -194,12 +283,14 @@ export default function MembresPage() {
     { key: "actifs", label: t("members.actifs"), color: "text-emerald-600", icon: CheckCircle },
     { key: "enAttente", label: t("members.en_attente"), color: "text-amber-600", icon: Clock },
     { key: "suspendus", label: t("members.suspendus"), color: "text-rose-600", icon: Ban },
+    { key: "bannis", label: t("members.banni") + "s", color: "text-red-600", icon: X },
     { key: "refuses", label: t("members.refuses"), color: "text-gray-500", icon: X },
+    { key: "supprimes", label: t("members.supprimes"), color: "text-gray-400", icon: Trash2 },
   ];
 
-  const filteredMembres = membres.filter(m => {
+const filteredMembres = membres.filter(m => {
     const nameMatch = (m.prenom + " " + m.nom + " " + m.email).toLowerCase().includes(search.toLowerCase());
-    return nameMatch && (filterRole === "all" || m.role === filterRole) && (filterStatus === "all" || m.status === filterStatus);
+    return nameMatch && (filterRole === "all" || m.role === filterRole) && (filterStatus === "all" || filterStatus === "archived" || filterStatus === "refused" || m.status === filterStatus);
   });
 
   return (
@@ -247,7 +338,9 @@ export default function MembresPage() {
               <option value="actif">{t("members.actif")}</option>
               <option value="en_attente">{t("members.en_attente")}</option>
               <option value="suspendu">{t("members.suspendu")}</option>
-              <option value="refusé">{t("members.refuse")}</option>
+              <option value="banni">{t("members.banni")}</option>
+              <option value="refused">{t("members.refuses_liste")}</option>
+              <option value="archived">{t("members.supprimes")}</option>
             </select>
             <Button variant="ghost" size="sm" onClick={() => { setSearch(""); setFilterRole("all"); setFilterStatus("all"); }}>
               <RefreshCw className="mr-2 h-4 w-4" /> {t("common.reinitialiser")}
@@ -277,8 +370,8 @@ export default function MembresPage() {
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-medium text-sm truncate">{m.prenom} {m.nom}</span>
                         <Badge variant="outline" className="text-xs">{getRoleLabel(m.role)}</Badge>
-                        <Badge variant={getStatusBadge(m.status)} className="text-xs">{getStatusLabel(m.status)}</Badge>
-                        {getEntretienStatus(m._id) && (
+                        <Badge variant={getStatusBadge(getStatutAffiche(m))} className="text-xs">{getStatusLabel(getStatutAffiche(m))}</Badge>
+                        {!m.archiver && m.status !== "actif" && getEntretienStatus(m._id) && (
                           <Badge variant={getEntretienBadge(getEntretienStatus(m._id))} className="text-xs">
                             {t("Entretien")}: {getEntretienStatusLabel(getEntretienStatus(m._id))}
                           </Badge>
@@ -287,16 +380,19 @@ export default function MembresPage() {
                       <p className="text-xs text-muted-foreground truncate mt-0.5">{m.email} &middot; ID: {m._id?.slice(-6)} &middot; {formatDate(m.createdAt)}</p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleView(m)} title={t("common.voir")}><Eye className="h-4 w-4" /></Button>
-                      {isUserManager && (
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleView(m)} title={t("common.voir")} disabled={processing}><Eye className="h-4 w-4" /></Button>
+                      {isUserManager && !estLectureSeule(m) && (
                         <>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(m)} title={t("common.modifier")}><Pencil className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleEdit(m)} title={t("common.modifier")} disabled={processing}><Pencil className="h-4 w-4" /></Button>
                           {m.status === "actif" ? (
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-amber-600" onClick={() => handleSuspendre(m._id)} title={t("members.suspendre")}><Ban className="h-4 w-4" /></Button>
+                            <>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-amber-600" onClick={() => handleSuspendre(m._id)} title={t("members.suspendre")} disabled={processing}><Ban className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600" onClick={() => handleBannir(m._id)} title={t("members.banni") || "Bannir"} disabled={processing}><Ban className="h-4 w-4" /></Button>
+                            </>
                           ) : m.status === "suspendu" ? (
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-emerald-600" onClick={() => handleReactiver(m._id)} title={t("members.reactiver")}><RefreshCw className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-emerald-600" onClick={() => handleReactiver(m._id)} title={t("members.reactiver")} disabled={processing}><RefreshCw className="h-4 w-4" /></Button>
                           ) : null}
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive" onClick={() => handleDelete(m._id)} title={t("common.supprimer")}><Trash2 className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive" onClick={() => handleDelete(m._id)} title={t("common.supprimer")} disabled={processing}><Trash2 className="h-4 w-4" /></Button>
                         </>
                       )}
                     </div>
@@ -317,7 +413,7 @@ export default function MembresPage() {
                 <CardTitle>{t("admin.gestion_roles")}</CardTitle>
                 <p className="text-sm text-muted-foreground">{t("admin.gestion_roles_sous_titre")}</p>
               </div>
-              <Button variant="outline" size="sm" onClick={handleAddRole} className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={handleAddRole} className="flex items-center gap-2" disabled={processing}>
                 <Plus className="w-4 h-4" /> {t("admin.nouveau_role")}
               </Button>
             </div>
@@ -328,10 +424,10 @@ export default function MembresPage() {
                 <div key={r.name} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-accent ring-1 ring-border hover:ring-primary-200 transition-all">
                   <span className="font-medium text-sm">{r.name}</span>
                   <span className="text-xs text-muted-foreground">({r.count})</span>
-                  <button onClick={() => handleRenameRole(r.name)} className="text-primary-600 hover:text-primary-800 ml-1 transition-colors" title={t("common.renommer")}>
+                  <button onClick={() => handleRenameRole(r.name)} disabled={processing} className="text-primary-600 hover:text-primary-800 ml-1 transition-colors disabled:opacity-50" title={t("common.renommer")}>
                     <Pencil className="w-4 h-4" />
                   </button>
-                  <button onClick={() => handleDeleteRole(r.name)} className="text-destructive hover:text-destructive/80 transition-colors" title={t("common.supprimer")}>
+                  <button onClick={() => handleDeleteRole(r.name)} disabled={processing} className="text-destructive hover:text-destructive/80 transition-colors disabled:opacity-50" title={t("common.supprimer")}>
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -358,7 +454,7 @@ export default function MembresPage() {
               <h3 className="text-lg font-semibold">{selectedMembre.prenom} {selectedMembre.nom}</h3>
               <div className="flex gap-2 mt-1">
                 <Badge variant="outline">{getRoleLabel(selectedMembre.role)}</Badge>
-                <Badge variant={getStatusBadge(selectedMembre.status)}>{getStatusLabel(selectedMembre.status)}</Badge>
+                <Badge variant={getStatusBadge(getStatutAffiche(selectedMembre))}>{getStatusLabel(getStatutAffiche(selectedMembre))}</Badge>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4 text-sm">
@@ -407,6 +503,24 @@ export default function MembresPage() {
                 <div className="space-y-1"><Label>{t("members.telephone")}</Label><Input value={editForm.telephone} onChange={(e) => setEditForm(p => ({ ...p, telephone: e.target.value }))} /></div>
                 <div className="space-y-1"><Label>{t("members.adresse")}</Label><Input value={editForm.adresse} onChange={(e) => setEditForm(p => ({ ...p, adresse: e.target.value }))} /></div>
               </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label>{t("members.sexe")}</Label>
+                  <select value={editForm.sexe} onChange={(e) => setEditForm(p => ({ ...p, sexe: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                    <option value="">{t("members.sexe_vide")}</option>
+                    <option value="Homme">{t("members.homme")}</option>
+                    <option value="Femme">{t("members.femme")}</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <Label>{t("members.situation_professionnelle")}</Label>
+                  <select value={editForm.situationProfessionnelle} onChange={(e) => setEditForm(p => ({ ...p, situationProfessionnelle: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                    <option value="Étudiant">{t("members.etudiant")}</option>
+                    <option value="Professionnel">{t("members.professionnel")}</option>
+                    <option value="Autre">{t("members.autre")}</option>
+                  </select>
+                </div>
+              </div>
               {isPresident && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
@@ -421,16 +535,32 @@ export default function MembresPage() {
                     <Label>{t("members.statut")}</Label>
                     <select value={editForm.status} onChange={(e) => setEditForm(p => ({ ...p, status: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                       <option value="actif">{t("members.actif")}</option>
-                      <option value="en_attente">{t("members.en_attente")}</option>
+                      <option value="en-attente">{t("members.en_attente")}</option>
+                      <option value="banni">{t("members.banni")}</option>
                       <option value="suspendu">{t("members.suspendu")}</option>
-                      <option value="refusé">{t("members.refuse")}</option>
                     </select>
                   </div>
                 </div>
               )}
+              {/* Second rôle : réservé à l'ancien président (PP) */}
+              {isPresident && editForm.role === "PP" && (
+                <div className="space-y-1">
+                  <Label>{t("members.role_secondaire")}</Label>
+                  <select value={editForm.roleSecondaire || ""} onChange={(e) => setEditForm(p => ({ ...p, roleSecondaire: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                    <option value="">{t("members.aucun_role")}</option>
+                    {(roles.length > 0 ? roles : [{name:"Membre"},{name:"President"},{name:"SecretaireGeneral"},{name:"ConseillerMedia"}])
+                      .filter(r => { const n = r.name || r; return n !== "PP" && n !== "President" && n !== "Paste President"; })
+                      .map(r => {
+                        const n = r.name || r;
+                        return <option key={n} value={n}>{getRoleLabel(n)}</option>;
+                      })}
+                  </select>
+                  <p className="text-xs text-muted-foreground">{t("members.role_secondaire_aide")}</p>
+                </div>
+              )}
               <DialogFooter className="gap-2 pt-2">
                 <Button type="button" variant="outline" onClick={() => { setShowEditModal(false); setPhotoPreview(null); }}>{t("common.annuler")}</Button>
-                <Button type="submit">{t("common.enregistrer")}</Button>
+                <Button type="submit" disabled={processing}>{t("common.enregistrer")}</Button>
               </DialogFooter>
             </form>
           </DialogContent>

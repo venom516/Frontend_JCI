@@ -6,10 +6,15 @@ import { translateErrorMessage } from "../utils/errorHelper";
 // ============================================================
 // CONFIGURATION
 // ============================================================
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
 // Timeout adaptatif : commence à 15s, monte jusqu'à 60s si réseau lent
 let currentTimeout = 15000;
+
+// Les uploads de fichiers passent par Cloudinary : la liaison est lente
+// (~9 s par Mo). Le timeout adaptatif de 15s annulait les fichiers de plus
+// de ~2 Mo, ce qui produisait « Request aborted » côté serveur.
+const UPLOAD_TIMEOUT = 10 * 60 * 1000;
 
 const axiosInstance = axios.create({
   baseURL: API_URL,
@@ -24,11 +29,21 @@ const axiosInstance = axios.create({
 // ============================================================
 axiosInstance.interceptors.request.use(
   (config) => {
+    // Un FormData (upload de fichier) impose son propre Content-Type
+    // multipart/form-data avec la boundary générée par le navigateur.
+    // Sans cette suppression, le Content-Type "application/json" défini
+    // plus haut est conservé, le FormData est sérialisé en JSON et le
+    // fichier arrive côté serveur comme un objet vide {}.
+    const estFormData =
+      typeof FormData !== "undefined" && config.data instanceof FormData;
+    if (estFormData) {
+      delete config.headers["Content-Type"];
+    }
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    config.timeout = currentTimeout;
+    config.timeout = estFormData ? UPLOAD_TIMEOUT : currentTimeout;
     config._startTime = Date.now();
     return config;
   },
@@ -38,6 +53,24 @@ axiosInstance.interceptors.request.use(
 // ============================================================
 // INTERCEPTEUR - Gérer les erreurs + timeout adaptatif
 // ============================================================
+
+// 403 qui signent une session terminée (le compte n'existe plus pour l'auth middleware).
+// Un 403 de permission ("Seul le Président peut...") ne doit PAS déconnecter : c'est un
+// refus normal, pas une session morte.
+const SESSION_TERMINEE = [
+  "Votre compte a été banni",
+  "Votre compte est suspendu",
+  "Votre compte a été archivé",
+];
+
+const terminerSession = () => {
+  const publicPages = ["/", "/home", "/about", "/contact", "/login", "/register", "/forgot-password", "/verify-email", "/actualites"];
+  if (publicPages.includes(window.location.pathname)) return;
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  window.dispatchEvent(new CustomEvent("auth:unauthorized"));
+};
+
 axiosInstance.interceptors.response.use(
   (response) => {
     const elapsed = Date.now() - (response.config._startTime || 0);
@@ -61,12 +94,13 @@ axiosInstance.interceptors.response.use(
     }
 
     if (error.response?.status === 401) {
-      const publicPages = ["/", "/home", "/about", "/contact", "/login", "/register", "/forgot-password", "/verify-email", "/formations", "/actualites"];
-      if (!publicPages.includes(window.location.pathname)) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        window.dispatchEvent(new CustomEvent("auth:unauthorized"));
-      }
+      terminerSession();
+    }
+
+    // Un compte archivé / banni / suspendu reçoit 403, pas 401 : sans ce cas,
+    // le token reste dans le navigateur et chaque appel échoue en boucle.
+    if (error.response?.status === 403 && SESSION_TERMINEE.includes(rawMsg)) {
+      terminerSession();
     }
     return Promise.reject(error);
   }
@@ -103,7 +137,9 @@ export const membreAPI = {
   validate: (id, action) => axiosInstance.put(`/membres/${id}/validate`, { action }),
   suspendre: (id) => axiosInstance.put(`/membres/${id}/suspendre`),
   reactiver: (id) => axiosInstance.put(`/membres/${id}/reactiver`),
+  bannir: (id) => axiosInstance.put(`/membres/${id}/bannir`),
   delete: (id) => axiosInstance.delete(`/membres/${id}`),
+  deletePermanent: (id) => axiosInstance.delete(`/membres/${id}/permanent`),
   getStats: () => axiosInstance.get("/membres/stats"),
   getPublicStats: () => axiosInstance.get("/membres/stats/public"),
   getByRole: (role) => axiosInstance.get(`/membres/roles/${role}`),
@@ -115,7 +151,6 @@ export const membreAPI = {
   deleteRole: (role) => axiosInstance.delete(`/membres/roles/${role}`),
   acceptMember: (id, data) => axiosInstance.put(`/membres/${id}/accept`, data),
   rejectMember: (id) => axiosInstance.put(`/membres/${id}/reject`),
-  validerInscription: (id) => axiosInstance.put(`/membres/${id}/valider`),
 };
 
 // ============================================================
@@ -123,10 +158,12 @@ export const membreAPI = {
 // ============================================================
 export const taskAPI = {
   getAll: (params) => axiosInstance.get("/tasks", { params }),
+  getStats: () => axiosInstance.get("/tasks/stats"),
   getById: (id) => axiosInstance.get(`/tasks/${id}`),
   create: (data) => axiosInstance.post("/tasks", data),
   createMedia: (data) => axiosInstance.post("/tasks/media", data),
   update: (id, data) => axiosInstance.put(`/tasks/${id}`, data),
+  updateStatus: (id, statut) => axiosInstance.put(`/tasks/${id}/status`, { statut }),
   delete: (id) => axiosInstance.delete(`/tasks/${id}`),
   addComment: (id, content) => axiosInstance.post(`/tasks/${id}/comments`, { content }),
   getCalendar: (params) => axiosInstance.get("/tasks/calendar", { params }),
@@ -156,6 +193,7 @@ export const newsAPI = {
 // ============================================================
 export const eventAPI = {
   getAll: (params) => axiosInstance.get("/events", { params }),
+  getStats: () => axiosInstance.get("/events/stats"),
   getById: (id) => axiosInstance.get(`/events/${id}`),
   create: (data) => axiosInstance.post("/events", data),
   update: (id, data) => axiosInstance.put(`/events/${id}`, data),
@@ -171,15 +209,13 @@ export const eventAPI = {
 export const documentAPI = {
   getAll: (params) => axiosInstance.get("/documents", { params }),
   getById: (id) => axiosInstance.get(`/documents/${id}`),
-  upload: (data) => axiosInstance.post("/documents", data, {
-    headers: { "Content-Type": "multipart/form-data" },
-  }),
-  update: (id, data) => axiosInstance.put(`/documents/${id}`, data, {
-    headers: { "Content-Type": "multipart/form-data" },
-  }),
+upload: (data, config) => axiosInstance.post("/documents", data, config),
+    update: (id, data, config) => axiosInstance.put(`/documents/${id}`, data, config),
   delete: (id) => axiosInstance.delete(`/documents/${id}`),
   approve: (id) => axiosInstance.put(`/documents/${id}/approve`),
   archive: (id) => axiosInstance.put(`/documents/${id}/archive`),
+  soumettre: (id) => axiosInstance.put(`/documents/${id}/soumettre`),
+  rejeter: (id) => axiosInstance.put(`/documents/${id}/rejeter`),
   download: (id) => axiosInstance.get(`/documents/${id}/download`, {
     responseType: 'blob',
   }),
@@ -190,13 +226,14 @@ export const documentAPI = {
 // ============================================================
 export const entretienAPI = {
   getAll: (params) => axiosInstance.get("/entretiens", { params }),
+  getStats: () => axiosInstance.get("/entretiens/stats"),
   getById: (id) => axiosInstance.get(`/entretiens/${id}`),
   create: (data) => axiosInstance.post("/entretiens", data),
   update: (id, data) => axiosInstance.put(`/entretiens/${id}`, data),
   delete: (id) => axiosInstance.delete(`/entretiens/${id}`),
   approve: (id) => axiosInstance.put(`/entretiens/${id}/approve`),
   reject: (id) => axiosInstance.put(`/entretiens/${id}/reject`),
-  realise: (id, data) => axiosInstance.put(`/entretiens/${id}/realise`, data),
+  terminer: (id) => axiosInstance.put(`/entretiens/${id}/terminer`),
 };
 
 // ============================================================
@@ -204,6 +241,7 @@ export const entretienAPI = {
 // ============================================================
 export const publicationAPI = {
   getAll: (params) => axiosInstance.get("/publications", { params }),
+  getStats: () => axiosInstance.get("/publications/stats"),
   getById: (id) => axiosInstance.get(`/publications/${id}`),
   create: (data) => axiosInstance.post("/publications", data, {
     headers: { "Content-Type": undefined },
@@ -214,6 +252,8 @@ export const publicationAPI = {
   delete: (id) => axiosInstance.delete(`/publications/${id}`),
   publish: (id) => axiosInstance.put(`/publications/${id}/publish`),
   archive: (id) => axiosInstance.put(`/publications/${id}/archive`),
+  soumettre: (id) => axiosInstance.put(`/publications/${id}/soumettre`),
+  rejeter: (id) => axiosInstance.put(`/publications/${id}/rejeter`),
   updateStats: (id, data) => axiosInstance.put(`/publications/${id}/stats`, data),
   publishDirect: (data) => axiosInstance.post("/publications/publish-direct", data, {
     headers: { "Content-Type": undefined },
@@ -243,18 +283,8 @@ export const contactAPI = {
 
 export const siteConfigAPI = {
   get: () => axiosInstance.get("/site-config"),
-  update: (data) => axiosInstance.put("/site-config", data, {
-    headers: { "Content-Type": "multipart/form-data" },
-  }),
+update: (data) => axiosInstance.put("/site-config", data),
   removeGroupPhoto: () => axiosInstance.delete("/site-config/group-photo"),
-};
-
-export const formationAPI = {
-  getCount: () => axiosInstance.get("/formations/count"),
-  getAll: () => axiosInstance.get("/formations"),
-  create: (data) => axiosInstance.post("/formations", data),
-  update: (id, data) => axiosInstance.put(`/formations/${id}`, data),
-  delete: (id) => axiosInstance.delete(`/formations/${id}`),
 };
 
 export const calendarAPI = {

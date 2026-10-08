@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { authAPI } from "../api/axios";
+import { translateErrorMessage } from "../utils/errorHelper";
+import { notifyMembresChanged } from "../utils/membreEvents";
 import toast from "react-hot-toast";
 
 const AuthContext = createContext();
@@ -38,6 +40,7 @@ export const AuthProvider = ({ children }) => {
     const handleUnauthorized = () => {
       setToken(null);
       setUser(null);
+      toast.error(translateErrorMessage("Session expirée"));
     };
     window.addEventListener("auth:unauthorized", handleUnauthorized);
     return () => window.removeEventListener("auth:unauthorized", handleUnauthorized);
@@ -49,16 +52,20 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await authAPI.register(userData);
-      
+      // Un nouveau candidat vient d'etre ajoute : la page Membres (et toute
+      // autre liste) doit se rafraichir immediatement, y compris si elle est
+      // ouverte dans un autre onglet.
+      try { notifyMembresChanged(); } catch (e) { /* evenement optionnel */ }
+
       return {
         success: true,
-        message: response.data.message || "Inscription réussie ! Veuillez vérifier votre email.",
+        message: translateErrorMessage(response.data.message || "Inscription réussie ! Veuillez vérifier votre email."),
         data: response.data.data
       };
     } catch (error) {
 
       
-      const message = error.response?.data?.message || "Erreur lors de l'inscription";
+      const message = error.response?.data?.message || translateErrorMessage("Erreur lors de l'inscription");
       return {
         success: false,
         message: message
@@ -80,11 +87,11 @@ export const AuthProvider = ({ children }) => {
       
       return {
         success: true,
-        message: response.data.message || "Connexion réussie",
+        message: translateErrorMessage(response.data.message || "Connexion réussie"),
         data: membre
       };
     } catch (error) {
-      const message = error.response?.data?.message || "Erreur de connexion";
+      const message = error.response?.data?.message || translateErrorMessage("Erreur de connexion");
       return {
         success: false,
         message: message
@@ -100,12 +107,12 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.verifyEmail({ email, code });
       return {
         success: true,
-        message: response.data.message || "Email vérifié avec succès"
+        message: translateErrorMessage(response.data.message || "Email vérifié avec succès")
       };
     } catch (error) {
       return {
         success: false,
-        message: error.response?.data?.message || "Erreur de vérification"
+        message: error.response?.data?.message || translateErrorMessage("Erreur de vérification")
       };
     }
   };
@@ -149,7 +156,7 @@ export const AuthProvider = ({ children }) => {
   const isSecretaire = user?.role === "SecretaireGeneral";
   const isMedia = user?.role === "ConseillerMedia";
   const isAdmin = user?.role === "Admin";
-  const isMember = user?.role === "Membre" || !user?.role;
+  const isMember = ["Membre", "VPFD", "VPPRE"].includes(user?.role) || !user?.role;
   const isAuthenticated = !!user;
 
   // ============================================================
