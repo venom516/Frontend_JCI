@@ -36,16 +36,22 @@ const NewsDetailPage = () => {
   const fetchNews = async ({ silent = false } = {}) => {
     if (!silent) setLoading(true);
     try {
-      const response = await newsAPI.getById(id);
+      const response = await newsAPI.getPublicById(id);
       const data = response.data.data || response.data;
       setNews(data);
       setComments(data.comments || []);
     } catch (error) {
+<<<<<<< HEAD
       if (!silent) {
         console.error("Erreur:", error);
         toast.error(t('news.non_trouvee'));
         navigate("/");
       }
+=======
+      console.error("Erreur:", error);
+      toast.error(error.response?.data?.message || error.translatedMessage || t('news.non_trouvee'));
+      navigate("/");
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
     } finally {
       if (!silent) setLoading(false);
     }
@@ -79,7 +85,7 @@ const NewsDetailPage = () => {
       toast.success(t('news.succes_supprimer'));
       navigate("/");
     } catch (error) {
-      toast.error(t('news.erreur'));
+      toast.error(error.response?.data?.message || error.translatedMessage || t('news.erreur'));
     }
   };
 

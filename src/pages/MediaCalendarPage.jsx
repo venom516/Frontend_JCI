@@ -68,7 +68,7 @@ const MediaCalendarPage = () => {
     } catch (error) {
       console.error("Erreur:", error);
       setError(error.message);
-      toast.error(t('calendrier.erreur_chargement'));
+      toast.error(error.response?.data?.message || error.translatedMessage || t('calendrier.erreur_chargement'));
       setEvents([]);
     } finally {
       setLoading(false);
@@ -89,7 +89,7 @@ const MediaCalendarPage = () => {
       setShowModal(true);
     } catch (error) {
       console.error("Erreur lors du clic:", error);
-      toast.error(t('calendrier.erreur_details'));
+      toast.error(error.response?.data?.message || error.translatedMessage || t('calendrier.erreur_details'));
     }
   };
 
@@ -215,10 +215,11 @@ const MediaCalendarPage = () => {
                     </div>
                   );
                 } catch (error) {
+                  console.error(error);
                   return (
                     <div className="p-1">
                       <div className="font-semibold text-sm truncate text-destructive">
-                        {t('calendrier.erreur_affichage')}
+                        {error.message || t('calendrier.erreur_affichage')}
                       </div>
                     </div>
                   );

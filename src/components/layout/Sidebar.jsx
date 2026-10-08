@@ -318,6 +318,7 @@ const Sidebar = () => {
                   <SidebarItem item={{ title: t("nav.profil"), href: "/profile", icon: UserCircle }} onClick={close} />
                   <SidebarItem item={{ title: t("nav.actualites"), href: "/news", icon: Newspaper }} onClick={close} />
                   <SidebarItem item={{ title: t("nav.publications"), href: "/publications", icon: Megaphone }} onClick={close} />
+<<<<<<< HEAD
                   <AccordionGroup
                     title={t("nav.calendrier")}
                     icon={Calendar}
@@ -334,6 +335,30 @@ const Sidebar = () => {
                     onClose={close}
                     items={[{ title: t("nav.taches_media"), href: "/tasks/media", icon: ListTodo }]}
                   />
+=======
+                  <SidebarItem item={{ title: t("nav.calendrier_media"), href: "/calendar/media", icon: Calendar }} onClick={close} />
+                </>
+              )}
+              {user?.role === "VPFD" && (
+                <>
+                  <SidebarItem item={{ title: t("nav.dashboard_vpfd"), href: "/dashboard/vpfd", icon: LayoutDashboard }} onClick={close} />
+                  <SidebarItem item={{ title: t("nav.profil"), href: "/profile", icon: UserCircle }} onClick={close} />
+                  <SidebarItem item={{ title: t("nav.membres"), href: "/members", icon: Users }} onClick={close} />
+                  <SidebarItem item={{ title: t("nav.calendrier_membre"), href: "/calendar/member", icon: Calendar }} onClick={close} />
+                  <SidebarItem item={{ title: t("nav.validations"), href: "/vpfd/validations", icon: CheckSquare }} onClick={close} />
+                  <SidebarItem item={{ title: t("nav.entretiens"), href: "/vpfd/entretiens", icon: CheckSquare }} onClick={close} />
+                  <SidebarItem item={{ title: t("nav.taches_evenements"), href: "/tasks-events", icon: CalendarDays }} onClick={close} />
+                  <SidebarItem item={{ title: t("nav.taches_media"), href: "/tasks/media", icon: ListTodo }} onClick={close} />
+                </>
+              )}
+              {user?.role === "VPPRE" && (
+                <>
+                  <SidebarItem item={{ title: t("nav.dashboard_vppre"), href: "/dashboard/vppre", icon: LayoutDashboard }} onClick={close} />
+                  <SidebarItem item={{ title: t("nav.profil"), href: "/profile", icon: UserCircle }} onClick={close} />
+                  <SidebarItem item={{ title: t("nav.taches_evenements"), href: "/tasks-events", icon: CalendarDays }} onClick={close} />
+                  <SidebarItem item={{ title: t("nav.taches_normale"), href: "/tasks/normale", icon: ListTodo }} onClick={close} />
+                  <SidebarItem item={{ title: t("calendar.general_title"), href: "/calendar/general", icon: Calendar }} onClick={close} />
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
                 </>
               )}
               {user?.role === "President" && (
@@ -389,6 +414,7 @@ const Sidebar = () => {
                 <>
                   <SidebarItem item={{ title: t("nav.dashboard"), href: "/dashboard", icon: LayoutDashboard }} onClick={close} />
                   <SidebarItem item={{ title: t("nav.profil"), href: "/profile", icon: UserCircle }} onClick={close} />
+<<<<<<< HEAD
                   <SidebarItem item={{ title: t("nav.evenements"), href: "/events", icon: Calendar }} onClick={close} />
                   <div className="pt-3 pb-1 px-2">
                     <p className="text-xs font-semibold text-surface-400 dark:text-gray-500 uppercase tracking-wider">{t("dashboard.mes_taches")}</p>
@@ -463,6 +489,9 @@ const Sidebar = () => {
                       </div>
                     </div>
                   </div>
+=======
+                  <SidebarItem item={{ title: t("nav.calendrier"), href: "/calendar/member", icon: Calendar }} onClick={close} />
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
                 </>
               )}
               {!["President", "SecretaireGeneral", "ConseillerMedia", "Membre", "VPFD", "VPPRE"].includes(user?.role) && (

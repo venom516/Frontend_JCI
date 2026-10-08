@@ -82,11 +82,33 @@ const [confirmAction, setConfirmAction] = useState(null);
   const handleTerminer = async (id) => {
     setProcessing(true);
     try {
+<<<<<<< HEAD
       await entretienAPI.terminer(id);
       toast.success(t("entretiens.termine_action"));
       fetchData();
     } catch (e) {
       toast.error(e.response?.data?.message || t("common.erreur"));
+=======
+      const [entretiensRes, membresRes] = await Promise.all([
+        entretienAPI.getAll({ status: filter }),
+        isPresident ? membreAPI.getAll() : Promise.resolve({ data: { data: [] } }),
+      ]);
+      setEntretiens(entretiensRes.data.data || []);
+      if (isPresident) setMembres(membresRes.data.data || []);
+      
+      const all = await entretienAPI.getAll();
+      const data = all.data.data || [];
+      setStats({
+        total: data.length,
+        demandes: data.filter(e => e.status === "demandé").length,
+        enAttente: data.filter(e => e.status === "en-attente").length,
+        approuves: data.filter(e => e.status === "approuvé").length,
+        realises: data.filter(e => e.status === "réalisé").length,
+        annules: data.filter(e => e.status === "annulé").length,
+      });
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.translatedMessage || t('entretiens.erreur_chargement'));
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
     } finally {
       setProcessing(false);
     }
@@ -173,6 +195,7 @@ const [confirmAction, setConfirmAction] = useState(null);
       toast.success(t("entretiens.mis_a_jour"));
       resetForm();
       fetchData();
+<<<<<<< HEAD
     } catch (err) {
       toast.error(err.response?.data?.message || t("common.erreur"));
     } finally {
@@ -219,6 +242,58 @@ const [confirmAction, setConfirmAction] = useState(null);
       );
     }
     return null;
+=======
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.translatedMessage || t('common.erreur'));
+    }
+  };
+
+  const handleApprove = async (id) => {
+    try {
+      await entretienAPI.approve(id);
+      toast.success(t('entretiens.approuve'));
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.translatedMessage || t('common.erreur'));
+    }
+  };
+
+  const handleReject = async (id) => {
+    try {
+      await entretienAPI.reject(id);
+      toast.success(t('entretiens.rejete'));
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.translatedMessage || t('common.erreur'));
+    }
+  };
+
+  const handleRealise = async (id) => {
+    const note = prompt(t('entretiens.note_prompt'));
+    if (note === null) return;
+    const remarques = prompt(t('entretiens.remarques_prompt'));
+    try {
+      await entretienAPI.realise(id, { 
+        note: parseFloat(note) || 0, 
+        remarques: remarques || "" 
+      });
+      toast.success(t('entretiens.marque_realise'));
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.translatedMessage || t('common.erreur'));
+    }
+  };
+
+  const getStatusBadgeClass = (status) => {
+    const classes = {
+      "demandé": "bg-blue-100 text-blue-800 hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-200",
+      "en-attente": "bg-amber-100 text-amber-800 hover:bg-amber-100 dark:bg-amber-950 dark:text-amber-200",
+      "approuvé": "bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-200",
+      "réalisé": "bg-blue-100 text-blue-800 hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-200",
+      "annulé": "bg-red-100 text-red-800 hover:bg-red-100 dark:bg-red-950 dark:text-red-200",
+    };
+    return classes[status] || "";
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
   };
 
   if (loading) return (
@@ -246,6 +321,7 @@ const [confirmAction, setConfirmAction] = useState(null);
           <StatBadge label={t("entretiens.rejetes")} value={stats.rejetes} color="danger" />
         </div>
 
+<<<<<<< HEAD
         <Card className="p-4 mb-8 flex flex-wrap gap-2 animate-in fade-in duration-300">
           <Button size="sm" variant={filter === "" ? "default" : "ghost"} onClick={() => setFilter("")}>{t("common.tous")}</Button>
           {GROUPES.map((g) => (
@@ -254,6 +330,18 @@ const [confirmAction, setConfirmAction] = useState(null);
             </Button>
           ))}
         </Card>
+=======
+        {isPresident && (
+          <Card className="p-4 mb-8 flex flex-wrap gap-2 animate-in fade-in duration-300">
+            <Button size="sm" variant={filter === "" ? "default" : "ghost"} onClick={() => setFilter("")}>{t('common.tous')}</Button>
+            <Button size="sm" variant={filter === "demandé" ? "default" : "ghost"} onClick={() => setFilter("demandé")}>{t('entretiens.demandes')}</Button>
+            <Button size="sm" variant={filter === "en-attente" ? "default" : "ghost"} onClick={() => setFilter("en-attente")}>{t('entretiens.en_attente')}</Button>
+            <Button size="sm" variant={filter === "approuvé" ? "default" : "ghost"} onClick={() => setFilter("approuvé")}>{t('entretiens.confirme')}</Button>
+            <Button size="sm" variant={filter === "réalisé" ? "default" : "ghost"} onClick={() => setFilter("réalisé")}>{t('entretiens.realises')}</Button>
+            <Button size="sm" variant={filter === "annulé" ? "default" : "ghost"} onClick={() => setFilter("annulé")}>{t('entretiens.annule')}</Button>
+          </Card>
+        )}
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
 
         <Dialog open={showForm} onOpenChange={(open) => { if (!open) resetForm(); }}>
           <DialogContent className="max-w-md">
@@ -317,6 +405,33 @@ const [confirmAction, setConfirmAction] = useState(null);
                       <span className="text-muted-foreground">{t("admin.statut")}</span>
                       <StatusBadge status={selected.membre?.status} module="membre" />
                     </div>
+<<<<<<< HEAD
+=======
+                    {item.remarques && <p className="text-sm text-muted-foreground mt-1">{item.remarques}</p>}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {isPresident && (
+                      <>
+                        {item.status === "demandé" || item.status === "en-attente" ? (
+                          <>
+                            <Button size="sm" className="bg-emerald-600 text-white hover:bg-emerald-700" onClick={() => handleApprove(item._id)}>{t('entretiens.confirmer')}</Button>
+                            <Button size="sm" variant="destructive" onClick={() => handleReject(item._id)}>{t('entretiens.rejeter')}</Button>
+                          </>
+                        ) : item.status === "approuvé" ? (
+                          <Button size="sm" variant="outline" onClick={() => handleRealise(item._id)}>{t('entretiens.marquer_realise')}</Button>
+                        ) : null}
+                        <Button size="sm" variant="outline" onClick={() => handleEdit(item)}>
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleDelete(item._id)}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </>
+                    )}
+                    {!isPresident && item.membre?._id === user?._id && item.status === "demandé" && (
+                      <Button size="sm" variant="destructive" onClick={() => handleDelete(item._id)}>{t('entretiens.annule')}</Button>
+                    )}
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
                   </div>
                 </div>
                 <div className="border-t border-border pt-4">

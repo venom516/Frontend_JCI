@@ -51,8 +51,31 @@ export default function LoginPage() {
         ConseillerMedia: t("dashboard.bienvenue") + ' ' + translateMemberRole('ConseillerMedia') + ' !',
         Membre: t("dashboard.bienvenue") + ' ' + translateMemberRole('Membre') + ' !'
       };
+<<<<<<< HEAD
       toast.success(roleMessages[role] || t("common.succes"));
       navigate("/dashboard");
+=======
+      toast.success(roleMessages[role] || '✅ ' + t("common.succes") + ' !');
+      const redirect = searchParams.get("redirect");
+      if (redirect && redirect.startsWith("/")) {
+        navigate(redirect);
+      } else {
+        const dashboardMap = {
+          President: '/president/validations',
+          VPFD: '/dashboard/vpfd',
+          VPPRE: '/dashboard/vppre',
+          Membre: '/dashboard/membre',
+          SecretaireGeneral: '/dashboard',
+          ConseillerMedia: '/tasks/media',
+          PP: '/dashboard/past-president',
+          'Past President': '/dashboard/past-president',
+          PPI: '/dashboard/ppi',
+          Sénateur: '/dashboard/senateur',
+          Admin: '/dashboard/admin',
+        };
+        navigate(dashboardMap[role] || '/dashboard');
+      }
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
     } else {
       const errMsg = translateError(result.message);
       setError(errMsg);

@@ -30,7 +30,7 @@ const PresidentSiteConfig = () => {
       setSlogan(config.slogan || "");
       setGroupPhotoPreview(config.groupPhoto || "");
     } catch (err) {
-      setMessage({ type: "error", text: t("site_config.error_load") });
+      setMessage({ type: "error", text: err.response?.data?.message || err.translatedMessage || t("site_config.error_load") });
     } finally {
       setLoading(false);
     }
@@ -64,7 +64,7 @@ const PresidentSiteConfig = () => {
       setGroupPhoto(null);
       setMessage({ type: "success", text: t("site_config.photo_deleted") });
     } catch (err) {
-      setMessage({ type: "error", text: t("site_config.error_delete") });
+      setMessage({ type: "error", text: err.response?.data?.message || err.translatedMessage || t("site_config.error_delete") });
     }
   };
 

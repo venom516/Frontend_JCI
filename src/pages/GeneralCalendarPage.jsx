@@ -108,7 +108,7 @@ export default function GeneralCalendarPage() {
     try {
       const res = await calendarAPI.getGeneral();
       setEvents(res.data.data || []);
-    } catch { toast.error(t("common.erreur")); }
+    } catch (error) { toast.error(error.response?.data?.message || error.translatedMessage || t("common.erreur")); }
     finally { setLoading(false); }
   };
 
@@ -168,8 +168,12 @@ const openEdit = (event) => {
       }
       setShowForm(false);
       fetchEvents();
+<<<<<<< HEAD
     } catch { toast.error(t("common.erreur")); }
     finally { setProcessing(false); }
+=======
+    } catch (error) { toast.error(error.response?.data?.message || error.translatedMessage || t("common.erreur")); }
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
   };
 
   const handleDelete = async (id) => {
@@ -180,8 +184,12 @@ const openEdit = (event) => {
       toast.success(t("calendar.toast_deleted"));
       setShowDetail(false);
       fetchEvents();
+<<<<<<< HEAD
     } catch { toast.error(t("common.erreur")); }
     finally { setProcessing(false); }
+=======
+    } catch (error) { toast.error(error.response?.data?.message || error.translatedMessage || t("common.erreur")); }
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
   };
 
   const handleDateSelect = (info) => {
@@ -205,7 +213,11 @@ const openEdit = (event) => {
       });
       toast.success(t("calendar.toast_date_updated"));
       fetchEvents();
+<<<<<<< HEAD
     } catch (err) { toast.error(messageErreur(err, t)); }
+=======
+    } catch (error) { toast.error(error.response?.data?.message || error.translatedMessage || t("common.erreur")); }
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
   };
 
   const handleEventResize = async (info) => {
@@ -227,7 +239,11 @@ const openEdit = (event) => {
       });
       toast.success(t("calendar.toast_duration_updated"));
       fetchEvents();
+<<<<<<< HEAD
     } catch (err) { toast.error(messageErreur(err, t)); }
+=======
+    } catch (error) { toast.error(error.response?.data?.message || error.translatedMessage || t("common.erreur")); }
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
   };
 
   const handleViewChange = (view) => {

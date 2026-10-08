@@ -12,8 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Skeleton } from "../components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
+<<<<<<< HEAD
 import { useAutoRefresh } from "../hooks/useAutoRefresh";
 import { Users, CheckCircle, Clock, AlertCircle, Plus, Pencil, Trash2, X, Camera } from "lucide-react";
+=======
+import { Users, CheckCircle, Clock, AlertCircle, Plus, Pencil, Trash2, X, Camera, Search } from "lucide-react";
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -60,7 +64,7 @@ const AdminDashboard = () => {
       const response = await membreAPI.getAll({ limit: 100, archived: filterStatus === "archived" ? true : undefined });
       setMembres(response.data.data || []);
     } catch (error) {
-      toast.error(t('admin.erreur_chargement'));
+      toast.error(error.response?.data?.message || error.translatedMessage || t('admin.erreur_chargement'));
     }
   };
 
@@ -69,6 +73,7 @@ const AdminDashboard = () => {
       const response = await membreAPI.getStats();
       setStats(response.data.data || {});
     } catch (error) {
+      toast.error(error.response?.data?.message || error.translatedMessage || t('admin.erreur_chargement'));
       console.error("Erreur stats:", error);
     } finally {
       setLoading(false);
@@ -80,6 +85,7 @@ const AdminDashboard = () => {
       const response = await membreAPI.getAllRoles();
       setRoles(response.data.data || []);
     } catch (error) {
+      toast.error(error.response?.data?.message || error.translatedMessage || t('admin.erreur_chargement'));
       console.error("Erreur chargement roles:", error);
     }
   };
@@ -95,27 +101,62 @@ const AdminDashboard = () => {
       toast.error(t('admin.erreur_nom_role'));
       return;
     }
+<<<<<<< HEAD
     await membreAPI.create({ nom: "Nouveau", prenom: "Membre", email: "role-" + Date.now() + "@temp.jci.tn", password: "Temp@123456", role: name.trim(), status: "actif" });
     toast.success(t('admin.succes_role_cree', { name: name.trim() }));
     fetchRoles();
   });
+=======
+    try {
+      await membreAPI.create({ nom: "Nouveau", prenom: "Membre", email: "role-" + Date.now() + "@temp.jci.tn", password: "Temp@123456", role: name.trim(), status: "actif" });
+      toast.success(t('admin.succes_role_cree', { name: name.trim() }));
+      fetchRoles();
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.translatedMessage || t('admin.erreur_creation_role'));
+    }
+  };
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
 
   const handleRenameRole = withProcessing(async (oldName) => {
     const newName = prompt(t('admin.nouveau_nom_pour', { name: oldName }), oldName);
     if (!newName || newName.trim() === oldName) return;
+<<<<<<< HEAD
     await membreAPI.renameRole(oldName, newName.trim());
     toast.success(t('admin.succes_role_renomme', { oldName: oldName, newName: newName.trim() }));
     fetchRoles();
     fetchMembres();
   });
+=======
+    try {
+      await membreAPI.renameRole(oldName, newName.trim());
+      toast.success(t('admin.succes_role_renomme', { oldName: oldName, newName: newName.trim() }));
+      fetchRoles();
+      fetchMembres();
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.translatedMessage || t('admin.erreur_renommage'));
+    }
+  };
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
 
   const handleDeleteRole = withProcessing(async (roleName) => {
     if (!window.confirm(t('admin.confirmer_supprimer_role', { roleName: roleName }))) return;
+<<<<<<< HEAD
     const res = await membreAPI.deleteRole(roleName);
     toast.success(res.data.message || t('admin.succes_role_supprime', { roleName: roleName }));
     fetchRoles();
     fetchMembres();
   });
+=======
+    try {
+      const res = await membreAPI.deleteRole(roleName);
+      toast.success(res.data.message || t('admin.succes_role_supprime', { roleName: roleName }));
+      fetchRoles();
+      fetchMembres();
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.translatedMessage || t('admin.erreur_suppression_role'));
+    }
+  };
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
 
   const handlePhotoChange = (e, isEdit = false) => {
     const file = e.target.files[0];
@@ -205,8 +246,13 @@ const AdminDashboard = () => {
       setPhotoPreview(null);
       fetchMembres();
     } catch (error) {
+<<<<<<< HEAD
       toast.error(t('admin.erreur_mise_a_jour'));
     } finally { setProcessing(false); }
+=======
+      toast.error(error.response?.data?.message || error.translatedMessage || t('admin.erreur_mise_a_jour'));
+    }
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
   };
 
   const handleAddSubmit = async (e) => {
@@ -233,7 +279,9 @@ const AdminDashboard = () => {
   };
 
   const getStatusBadge = (status) => {
+    // Cles = enum exact de Membre.status (accents et tirets compris).
     const colors = {
+<<<<<<< HEAD
       actif: "bg-emerald-100 text-emerald-700",
       en_attente: "bg-amber-100 text-amber-700",
       "en-attente": "bg-amber-100 text-amber-700",
@@ -242,6 +290,16 @@ const AdminDashboard = () => {
       "non-valide": "bg-accent text-muted-foreground",
       "refusé": "bg-orange-100 text-orange-700",
       "archivé": "bg-gray-100 text-gray-500",
+=======
+      "non-inscrit": "bg-accent text-muted-foreground",
+      "en-attente": "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-200",
+      actif: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-200",
+      "non-validé": "bg-accent text-muted-foreground",
+      suspendu: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-200",
+      banni: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-200",
+      refusé: "bg-gray-100 text-gray-600 dark:bg-gray-900 dark:text-gray-300",
+      inactif: "bg-accent text-muted-foreground",
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
     };
     return colors[status] || "bg-accent text-muted-foreground";
   };
@@ -382,11 +440,15 @@ const AdminDashboard = () => {
               <SelectContent>
                 <SelectItem value="all">{t('admin.tous_statuts')}</SelectItem>
                 <SelectItem value="actif">{t('admin.actif')}</SelectItem>
-                <SelectItem value="en_attente">{t('admin.en_attente')}</SelectItem>
+                <SelectItem value="en-attente">{t('admin.en_attente')}</SelectItem>
                 <SelectItem value="suspendu">{t('admin.suspendu')}</SelectItem>
                 <SelectItem value="banni">{t('admin.banni')}</SelectItem>
+<<<<<<< HEAD
                 <SelectItem value="non-valide">{t('admin.non_valide')}</SelectItem>
                 <SelectItem value="archived">{t('members.supprimes')}</SelectItem>
+=======
+                <SelectItem value="non-validé">{t('admin.non_valide')}</SelectItem>
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
               </SelectContent>
             </Select>
           </div>
@@ -688,7 +750,7 @@ const AdminDashboard = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="actif">{t('common.actifs')}</SelectItem>
-                    <SelectItem value="en_attente">{t('common.en_attente')}</SelectItem>
+                    <SelectItem value="en-attente">{t('common.en_attente')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
