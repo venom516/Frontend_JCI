@@ -36,7 +36,7 @@ const TasksEventsPage = () => {
       setTasks(tasksRes.data.data || []);
       setEvents(eventsRes.data.data || []);
     } catch (error) {
-      toast.error(t("common.erreur"));
+      toast.error(error.response?.data?.message || error.translatedMessage || t("common.erreur"));
     } finally {
       setLoading(false);
     }

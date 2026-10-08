@@ -18,8 +18,6 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-const UNIQUE_ROLES = ["President", "Conseiller Juridique", "ConseillerMedia", "Conseiller IT", "Conseiller 100% Efficacité", "PPI", "Directeur Exécutif"];
-
 export default function MembresPage() {
   const { t, formatDate } = useI18n();
   const { user, isPresident } = useAuth();
@@ -43,6 +41,10 @@ export default function MembresPage() {
 
   useEffect(() => { fetchMembres(); }, [filterStatus]);
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
   // Polling : sert uniquement a COMPARER. Silencieux = pas de squelette, et
   // si les donnees sont identiques fetchMembres ne touche pas a l'etat, donc
   // la page ne se re-rend pas.
@@ -69,6 +71,7 @@ export default function MembresPage() {
     // faire clignoter la page entre le clic et la reponse.
     fetchMembres({ silencieux: true });
     fetchStats();
+<<<<<<< HEAD
   };
 
   useEffect(() => {
@@ -121,16 +124,86 @@ const fetchMembres = async ({ silencieux = false } = {}) => {
       setStats((prev) => (JSON.stringify(prev) === JSON.stringify(data) ? prev : data));
     }
     catch (e) { console.error(e); }
+=======
+  };
+
+  useEffect(() => {
+    return subscribeMembresChanged(() => refreshMembresRef.current?.());
+  }, []);
+
+
+// ============================================================
+// RAFRAICHISSEMENT : UNIQUEMENT QUAND LES DONNEES CHANGENT
+// ============================================================
+// Le polling (toutes les 30 s) doit servir a COMPARER, pas a reconstruire la
+// page. Si on Calling setMembres a chaque fois, React re-rend la liste et le
+// squelette de chargement (loading) s'affiche puis disparait : c'est
+// exactement le clignotement signaler. Donc on garde la reference precedente
+// quand rien n'a change : React voit le meme objet et ne re-rend pas.
+
+// Signature limitee aux champs qui apparaissent sur la ligne du membre.
+// 'updatedAt' suffit a detecter une edition : Mongoose le met a jour a chaque
+// save.
+const signatureMembre = (m) =>
+  [m._id, m.nom, m.prenom, m.email, m.telephone, m.role, m.status, m.archiver, m.photo, m.updatedAt, m.createdAt]
+    .map((v) => (v === undefined || v === null ? "" : String(v)))
+    .join("|");
+
+const membresIdentiques = (a, b) =>
+  a.length === b.length && a.every((m, i) => signatureMembre(m) === signatureMembre(b[i]));
+
+const fetchMembres = async ({ silencieux = false } = {}) => {
+    // En mode silencieux on ne touche pas 'loading' : pas de squelette.
+    if (!silencieux) setLoading(true);
+    try {
+      const params = {};
+      if (filterStatus === "archived") params.archived = true;
+      if (filterStatus === "refused") params.refused = true;
+      const r = await membreAPI.getAll(params);
+      const data = r.data.data || [];
+      setMembres((prev) => (membresIdentiques(prev, data) ? prev : data));
+    }
+    catch (e) {
+      if (silencieux) console.error(e);
+      else toast.error(t("members.erreur_chargement"));
+    }
+    finally { if (!silencieux) setLoading(false); }
+};
+
+  const fetchStats = async () => {
+    try {
+      const r = await membreAPI.getStats();
+      const data = r.data.data || {};
+      setStats((prev) => (JSON.stringify(prev) === JSON.stringify(data) ? prev : data));
+    }
+    catch (e) { console.error(e); }
+=======
+  const fetchMembres = async () => {
+    setLoading(true);
+    try { const r = await membreAPI.getAll(); setMembres(r.data.data || []); }
+    catch (e) { toast.error(e.response?.data?.message || e.translatedMessage || t("members.erreur_chargement")); }
+    finally { setLoading(false); }
+  };
+
+  const isVPFDorSG = user?.role === "VPFD" || user?.role === "SecretaireGeneral" || isPresident;
+  const canViewStats = isPresident || user?.role === "SecretaireGeneral";
+
+  const fetchStats = async () => {
+    if (!canViewStats) return;
+    try { const r = await membreAPI.getStats(); setStats(r.data.data || {}); }
+    catch (e) { toast.error(e.response?.data?.message || e.translatedMessage || t("common.erreur")); console.error("Erreur stats:", e); }
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
+>>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
   };
 
   const fetchRoles = async () => {
     try { const r = await membreAPI.getAllRoles(); setRoles(r.data.data || []); }
-    catch (e) { console.error(e); }
+    catch (e) { toast.error(e.response?.data?.message || e.translatedMessage || t("common.erreur")); console.error(e); }
   };
 
   const fetchEntretiens = async () => {
     try { const r = await entretienAPI.getAll({ limit: 1000 }); setEntretiens(r.data.data || []); }
-    catch (e) { console.error(e); }
+    catch (e) { toast.error(e.response?.data?.message || e.translatedMessage || t("common.erreur")); console.error(e); }
   };
 
   const getEntretienStatus = (membreId) => {
@@ -149,9 +222,21 @@ const fetchMembres = async ({ silencieux = false } = {}) => {
     'accepté': 'default', 'rejeté': 'destructive'
   })[s] || 'secondary';
 
+<<<<<<< HEAD
   const withProcessing = (fn) => async (...args) => {
     setProcessing(true);
     try { await fn(...args); } finally { setProcessing(false); }
+=======
+<<<<<<< HEAD
+  const withProcessing = (fn) => async (...args) => {
+    setProcessing(true);
+    try { await fn(...args); } finally { setProcessing(false); }
+=======
+  const handleValidate = async (id, action) => {
+    try { await membreAPI.validate(id, action); toast.success(t("members.succes_validation")); fetchMembres(); fetchStats(); }
+    catch (e) { toast.error(e.response?.data?.message || e.translatedMessage || t("members.erreur_validation")); }
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
+>>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
   };
 
   // Emission de l'evenement uniquement : c'est l'abonnement (useEffect
@@ -165,6 +250,7 @@ const fetchMembres = async ({ silencieux = false } = {}) => {
 
   const handleSuspendre = withProcessing(async (id) => {
     if (!window.confirm(t("members.confirmer_suspension"))) return;
+<<<<<<< HEAD
     await membreAPI.suspendre(id); toast.success(t("members.succes_suspendu")); rafraichirMembres();
   });
 
@@ -172,6 +258,27 @@ const fetchMembres = async ({ silencieux = false } = {}) => {
     if (!window.confirm(t("members.confirmer_reactivation"))) return;
     await membreAPI.reactiver(id); toast.success(t("members.succes_reactive")); rafraichirMembres();
   });
+=======
+<<<<<<< HEAD
+    await membreAPI.suspendre(id); toast.success(t("members.succes_suspendu")); rafraichirMembres();
+  });
+=======
+    try { await membreAPI.suspendre(id); toast.success(t("members.succes_suspendu")); fetchMembres(); fetchStats(); }
+    catch (e) { toast.error(e.response?.data?.message || e.translatedMessage || t("common.erreur")); }
+  };
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
+
+  const handleReactiver = withProcessing(async (id) => {
+    if (!window.confirm(t("members.confirmer_reactivation"))) return;
+<<<<<<< HEAD
+    await membreAPI.reactiver(id); toast.success(t("members.succes_reactive")); rafraichirMembres();
+  });
+=======
+    try { await membreAPI.reactiver(id); toast.success(t("members.succes_reactive")); fetchMembres(); fetchStats(); }
+    catch (e) { toast.error(e.response?.data?.message || e.translatedMessage || t("common.erreur")); }
+  };
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
+>>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
 
   const handleBannir = withProcessing(async (id) => {
     if (!window.confirm(t("members.confirmer_bannissement") || "Bannir définitivement ce membre ?")) return;
@@ -238,6 +345,10 @@ const fetchMembres = async ({ silencieux = false } = {}) => {
     try {
       const p = { ...editForm };
       if (!isPresident) { delete p.role; delete p.status; }
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
       if (p.role && p.role !== selectedMembre.role && UNIQUE_ROLES.includes(p.role) && p.role !== 'President') {
         const alreadyAssigned = membres.some(m => m._id !== selectedMembre._id && m.role === p.role && m.status !== 'refusé');
         if (alreadyAssigned) {
@@ -250,12 +361,40 @@ const fetchMembres = async ({ silencieux = false } = {}) => {
       setShowEditModal(false); setPhotoPreview(null); rafraichirMembres();
         } catch (e) { toast.error(e.response?.data?.message || t("members.erreur_mise_a_jour")); }
     finally { setProcessing(false); }
+<<<<<<< HEAD
+=======
+=======
+      // L'unicite d'un role est decidee par le backend (UNIQUE_ROLES +
+      // rejet 400) : une copie locale finit toujours par diverger.
+      await membreAPI.update(selectedMembre._id, p);
+      toast.success(t("members.succes_mis_a_jour"));
+      setShowEditModal(false); setPhotoPreview(null); fetchMembres();
+    } catch (e) { toast.error(e.response?.data?.message || e.translatedMessage || t("members.erreur_mise_a_jour")); }
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
+>>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
   };
 
+  // Cles = valeurs exactes de l'enum backend (Membre.status) : "en-attente"
+  // a un tiret, "non-validé" et "non-inscrit" des accents. Une orthographe
+  // differente tomberait silencieusement dans le repli.
   const getStatusBadge = (s) => ({
+<<<<<<< HEAD
     actif: "default", en_attente: "secondary", "en-attente": "secondary",
     "non-valide": "destructive", "non-inscrit": "outline", suspendu: "destructive",
     banni: "destructive", refusé: "outline", "archivé": "outline"
+<<<<<<< HEAD
+=======
+=======
+    "non-inscrit": "secondary",
+    "en-attente": "secondary",
+    actif: "default",
+    "non-validé": "destructive",
+    suspendu: "destructive",
+    banni: "destructive",
+    refusé: "outline",
+    inactif: "secondary"
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
+>>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
   })[s] || "secondary";
 
   const getRoleLabel = (r) => ({
@@ -269,11 +408,24 @@ const fetchMembres = async ({ silencieux = false } = {}) => {
   })[r] || r;
 
   const getStatusLabel = (s) => ({
+<<<<<<< HEAD
     actif: t("members.actif"), en_attente: t("members.en_attente"),
     "en-attente": t("members.en_attente"), "non-valide": t("members.non_valide"),
     "non-inscrit": t("members.non_valide"), suspendu: t("members.suspendu"),
     banni: t("members.banni"), refusé: t("members.refuse"),
     "archivé": t("members.archive")
+<<<<<<< HEAD
+=======
+=======
+    "non-inscrit": t("members.non_valide"),
+    "en-attente": t("members.en_attente"),
+    actif: t("members.actif"),
+    "non-validé": t("members.non_valide"),
+    suspendu: t("members.suspendu"),
+    banni: t("members.banni"),
+    refusé: t("members.refuse")
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
+>>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
   })[s] || s;
 
   const getSituationLabel = (s) => ({ Etudiant: t("members.etudiant"), Professionnel: t("members.professionnel"), Autre: t("members.autre") })[s] || s;
@@ -329,18 +481,28 @@ const filteredMembres = membres.filter(m => {
             </div>
             <select value={filterRole} onChange={(e) => setFilterRole(e.target.value)} className="flex h-10 w-full sm:w-[180px] rounded-md border border-input bg-background px-3 py-2 text-sm">
               <option value="all">{t("members.tous_roles")}</option>
-              {["President","Conseiller Juridique","Sénateur","PP","Past President","PPI","SecretaireGeneral","ConseillerMedia","Membre"].map(r => (
-                <option key={r} value={r}>{getRoleLabel(r)}</option>
-              ))}
+              {(roles.length > 0 ? roles : [{ name: "Membre" }, { name: "President" }, { name: "SecretaireGeneral" }, { name: "ConseillerMedia" }]).map(r => {
+                const nom = r.name || r;
+                return <option key={nom} value={nom}>{getRoleLabel(nom)}</option>;
+              })}
             </select>
             <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="flex h-10 w-full sm:w-[160px] rounded-md border border-input bg-background px-3 py-2 text-sm">
               <option value="all">{t("members.tous_statuts")}</option>
               <option value="actif">{t("members.actif")}</option>
-              <option value="en_attente">{t("members.en_attente")}</option>
+              <option value="en-attente">{t("members.en_attente")}</option>
               <option value="suspendu">{t("members.suspendu")}</option>
               <option value="banni">{t("members.banni")}</option>
+<<<<<<< HEAD
               <option value="refused">{t("members.refuses_liste")}</option>
               <option value="archived">{t("members.supprimes")}</option>
+=======
+<<<<<<< HEAD
+              <option value="refused">{t("members.refuses_liste")}</option>
+              <option value="archived">{t("members.supprimes")}</option>
+=======
+              <option value="refusé">{t("members.refuse")}</option>
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
+>>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
             </select>
             <Button variant="ghost" size="sm" onClick={() => { setSearch(""); setFilterRole("all"); setFilterStatus("all"); }}>
               <RefreshCw className="mr-2 h-4 w-4" /> {t("common.reinitialiser")}
@@ -377,7 +539,7 @@ const filteredMembres = membres.filter(m => {
                           </Badge>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground truncate mt-0.5">{m.email} &middot; ID: {m._id?.slice(-6)} &middot; {formatDate(m.createdAt)}</p>
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">{m.email} {m.telephone ? <>&middot; {m.telephone}</> : ""} &middot; {m.role}</p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleView(m)} title={t("common.voir")} disabled={processing}><Eye className="h-4 w-4" /></Button>
@@ -536,8 +698,19 @@ const filteredMembres = membres.filter(m => {
                     <select value={editForm.status} onChange={(e) => setEditForm(p => ({ ...p, status: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                       <option value="actif">{t("members.actif")}</option>
                       <option value="en-attente">{t("members.en_attente")}</option>
+<<<<<<< HEAD
                       <option value="banni">{t("members.banni")}</option>
                       <option value="suspendu">{t("members.suspendu")}</option>
+=======
+<<<<<<< HEAD
+                      <option value="banni">{t("members.banni")}</option>
+                      <option value="suspendu">{t("members.suspendu")}</option>
+=======
+                      <option value="suspendu">{t("members.suspendu")}</option>
+                      <option value="banni">{t("members.banni")}</option>
+                      <option value="refusé">{t("members.refuse")}</option>
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
+>>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
                     </select>
                   </div>
                 </div>

@@ -120,11 +120,13 @@ var DocumentsPage = function () {
   var fetchDocuments = async function () {
     setLoading(true);
     try {
-      var response = await documentAPI.getAll({ status: filter });
+      // Un filtre vide produit ?status= : on omet la cle plutot que
+      // d'envoyer un parametre vide au serveur.
+      var response = await documentAPI.getAll(filter ? { status: filter } : {});
       setDocuments((response.data && response.data.data) || []);
     } catch (error) {
       console.error("Erreur chargement:", error);
-      toast.error(t("documents.erreur_chargement"));
+      toast.error(error.response?.data?.message || error.translatedMessage || t("documents.erreur_chargement"));
     } finally {
       setLoading(false);
     }
@@ -195,9 +197,16 @@ setLoading(true);
       toast.success(t("documents.succes_supprime"));
       fetchDocuments();
     } catch (error) {
+<<<<<<< HEAD
       toast.error(t("common.erreur"));
     } finally {
       setProcessing(false);
+<<<<<<< HEAD
+=======
+=======
+      toast.error(error.response?.data?.message || error.translatedMessage || t("common.erreur"));
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
+>>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
     }
   };
 
@@ -208,9 +217,16 @@ setLoading(true);
       toast.success(t("documents.succes_approuve"));
       fetchDocuments();
     } catch (error) {
+<<<<<<< HEAD
       toast.error(t("common.erreur"));
     } finally {
       setProcessing(false);
+<<<<<<< HEAD
+=======
+=======
+      toast.error(error.response?.data?.message || error.translatedMessage || t("common.erreur"));
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
+>>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
     }
   };
 
@@ -221,6 +237,7 @@ setLoading(true);
       toast.success(t("documents.succes_archive"));
       fetchDocuments();
     } catch (error) {
+<<<<<<< HEAD
       toast.error(t("common.erreur"));
     } finally {
       setProcessing(false);
@@ -250,6 +267,12 @@ setLoading(true);
       toast.error(error.response?.data?.message || t("common.erreur"));
     } finally {
       setProcessing(false);
+<<<<<<< HEAD
+=======
+=======
+      toast.error(error.response?.data?.message || error.translatedMessage || t("common.erreur"));
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
+>>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
     }
   };
 
@@ -266,9 +289,16 @@ setLoading(true);
       link.remove();
       toast.success(t("documents.succes_telechargement"));
     } catch (error) {
+<<<<<<< HEAD
       toast.error(t("documents.erreur_telechargement"));
     } finally {
       setProcessing(false);
+<<<<<<< HEAD
+=======
+=======
+      toast.error(error.response?.data?.message || error.translatedMessage || t("documents.erreur_telechargement"));
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
+>>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
     }
   };
 

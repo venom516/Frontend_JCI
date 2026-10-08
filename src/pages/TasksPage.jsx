@@ -17,6 +17,19 @@ import { Plus, Pencil, Trash2, ClipboardList, ListTodo } from "lucide-react";
 const TasksPage = () => {
   const { user, isPresident } = useAuth();
   const { t, translateStatus, formatDate } = useI18n();
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+=======
+  const isMediaView = window.location.pathname.includes("/media");
+  const taskType = isMediaView ? "media" : "normal";
+  const canAssign = isPresident || user?.role === "VPFD" || user?.role === "ConseillerMedia";
+  // Miroir de taskController : update/delete reserves au President, au VPFD et
+  // au createur de la tache. Le bouton Modifier ne doit pas etre affichable
+  // aux autres roles (sinon formulaire ouvrable mais rejete en 403).
+  const canManageTask = (task) => isPresident || user?.role === "VPFD" || task.createdBy?._id === user?._id;
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
+>>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
 
   const [tasks, setTasks] = useState([]);
   const [membres, setMembres] = useState([]);
@@ -39,12 +52,18 @@ const TasksPage = () => {
       const params = { statut: filter, taskType: "normal" };
       const [tasksRes, membresRes] = await Promise.all([
         taskAPI.getAll(params),
-        isPresident ? membreAPI.getAll() : Promise.resolve({ data: { data: [] } }),
+        canAssign ? membreAPI.getAll() : Promise.resolve({ data: { data: [] } }),
       ]);
       setTasks(tasksRes.data.data || []);
-      if (isPresident) setMembres(membresRes.data.data || []);
+      if (canAssign) {
+        let members = membresRes.data.data || [];
+        if (isMediaView) {
+          members = members.filter(m => m.role === "Membre");
+        }
+        setMembres(members);
+      }
     } catch (error) {
-      toast.error(t('common.chargement'));
+      toast.error(error.response?.data?.message || error.translatedMessage || t('common.chargement'));
     } finally {
       setLoading(false);
     }
@@ -110,6 +129,10 @@ const TasksPage = () => {
       toast.success(t('common.supprimer'));
       fetchData();
     } catch (error) {
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
       toast.error(t('common.erreur'));
     }
   };
@@ -121,6 +144,12 @@ const TasksPage = () => {
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.message || t('common.erreur'));
+<<<<<<< HEAD
+=======
+=======
+      toast.error(error.response?.data?.message || error.translatedMessage || t('common.chargement'));
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
+>>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
     }
   };
 
@@ -181,15 +210,15 @@ const TasksPage = () => {
                 <Label>{t('tasks.deadline')}</Label>
                 <Input type="datetime-local" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} required />
               </div>
-              {isPresident && (
+              {canAssign && (
                 <div className="space-y-2">
-                  <Label>{t('tasks.assigner')}</Label>
+                  <Label>{t('tasks.assigner_a')}</Label>
                   <Select value={form.membre} onValueChange={(v) => setForm({ ...form, membre: v })}>
                     <SelectTrigger><SelectValue placeholder={t('tasks.assigner')} /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">{t('tasks.assigner')}</SelectItem>
                       {membres.map((m) => (
-                        <SelectItem key={m._id} value={m._id}>{m.prenom} {m.nom}</SelectItem>
+                        <SelectItem key={m._id} value={m._id}>{m.prenom} {m.nom} ({m.role})</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -248,10 +277,15 @@ const TasksPage = () => {
                       <span>{t('tasks.statut')}: <StatusBadge status={task.statut} module="task" /></span>
                       <span>{t('tasks.deadline')}: {task.deadline ? formatDate(task.deadline) : t('common.non_renseigne')}</span>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      {t('tasks.assigner')}: {task.membre ? (task.membre.prenom + ' ' + task.membre.nom) : t('common.non_renseigne')}
+                    <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
+                      <span>{t('tasks.assigner_a')}: {task.membre ? (task.membre.prenom + ' ' + task.membre.nom) : t('common.non_renseigne')}</span>
+                      <span>{t('tasks.assigner_par')}: {task.createdBy ? (task.createdBy.prenom + ' ' + task.createdBy.nom) : t('common.non_renseigne')}</span>
                     </div>
                   </div>
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
                   <div className="flex gap-1.5 shrink-0 flex-wrap">
                     {(isPresident || task.membre?._id === user?._id) && (
                       <>
@@ -272,6 +306,21 @@ const TasksPage = () => {
                     <Button variant="ghost" size="icon" onClick={() => handleEdit(task)} title={t('common.modifier')}><Pencil className="w-4 h-4" /></Button>
                     {(isPresident || task.createdBy?._id === user?._id) && (
                       <Button variant="ghost" size="icon" onClick={() => handleDelete(task._id)} title={t('common.supprimer')}><Trash2 className="w-4 h-4" /></Button>
+<<<<<<< HEAD
+=======
+=======
+                  <div className="flex gap-1.5 shrink-0">
+                    {canManageTask(task) && (
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(task)} title={t('common.modifier')}>
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {canManageTask(task) && (
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(task._id)} title={t('common.supprimer')}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+>>>>>>> 47883136c2fca296e3dcd5a33f1106ec0316b78a
+>>>>>>> 82d4b6f6dc74b5b05e36ebbdc5395ed46ed114c9
                     )}
                   </div>
                 </div>

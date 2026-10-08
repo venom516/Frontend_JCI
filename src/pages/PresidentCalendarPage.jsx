@@ -69,7 +69,7 @@ const PresidentCalendarPage = () => {
     } catch (error) {
       console.error("Erreur:", error);
       setError(error.message);
-      toast.error(t('home.erreur_chargement'));
+      toast.error(error.response?.data?.message || error.translatedMessage || t('home.erreur_chargement'));
       setEvents([]);
     } finally {
       setLoading(false);
@@ -90,7 +90,7 @@ const PresidentCalendarPage = () => {
       setShowModal(true);
     } catch (error) {
       console.error("Erreur:", error);
-      toast.error(t('common.erreur'));
+      toast.error(error.response?.data?.message || error.translatedMessage || t('common.erreur'));
     }
   };
 
@@ -235,9 +235,10 @@ const PresidentCalendarPage = () => {
                     </div>
                   );
                 } catch (error) {
+                  console.error(error);
                   return (
                     <div className="p-1 text-destructive text-xs">
-                      {t('common.erreur')}
+                      {error.message || t('common.erreur')}
                     </div>
                   );
                 }
